@@ -1,0 +1,25 @@
+# Secrets and environment files
+.env
+*.env
+*.key
+*.pem
+*.crt
+private/
+
+# WireGuard private keys
+wireguard/privatekey
+wireguard/*/privatekey
+
+# Runtime data
+data/
+runner/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor artifacts
+*.swp
+*.swo
+.idea/
+.vscode/
