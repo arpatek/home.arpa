@@ -38,6 +38,8 @@ Unknown clients are not ignored — all devices on the network receive an IP.
 
 - Local domain queries (`home.arpa`) are never forwarded upstream
 - Private reverse lookups are not forwarded upstream (`bogusPriv`)
+- Reverse DNS for `10.33.111.0/24` delegated to gateway (`10.33.111.1`)
+- Reverse DNS for WireGuard subnet (`10.10.10.0/24`) handled locally on port `55055`
 - NTP synced via `us.pool.ntp.org`
 
 ### Web Interface
@@ -87,4 +89,6 @@ filtering for all devices.
 ## Notes
 
 - Also serves as DNS and DHCP for the WireGuard 10.10.10.0/24 subnet
-- `home.arpa` is reserved for local network use per [RFC 8375](https://datatracker.ietf.org/doc/html/rfc8375), making it a safe and standards-compliant choice for private homelab DNS
+- `home.arpa` is reserved for local network use per
+  [RFC 8375](https://datatracker.ietf.org/doc/html/rfc8375),
+  making it a safe and standards-compliant choice for private homelab DNS
