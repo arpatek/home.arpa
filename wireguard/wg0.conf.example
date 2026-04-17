@@ -1,0 +1,21 @@
+[Interface]
+Address = 10.10.10.1/24
+ListenPort = 55055
+MTU = 1380
+PrivateKey = ""
+
+
+# Peer: node-zero
+[Peer]
+PublicKey = RmVAFWfPghKVxOYlINTn7PTI8MWHSVEE/Z+3wRtqzms=
+AllowedIPs = 10.10.10.10/32
+
+# Peer: deck-alpha
+[Peer]
+PublicKey = ch7E8s+mtl3+m1vKf4UCJqokzs6rAc1Ax2QGVmd64DQ=
+AllowedIPs = 10.10.10.11/32
+
+# Peer: deck-gamma
+[Peer]
+PublicKey = m20JP1PK3hSBT5cbyaf/ZCB+lPUcbJX/zEVQPdTnrX0= 
+AllowedIPs = 10.10.10.12/32
