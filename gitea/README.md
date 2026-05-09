@@ -54,11 +54,11 @@ gitea/
 
 ## Current deployment
 
-| Service    | Image                     | Note                                       |
-| ---------- | ------------------------- | ------------------------------------------ |
-| Gitea      | `gitea/gitea:latest`      | Needs pin to 1.26.x+ (CVE-2026-27780 fix) |
-| PostgreSQL | `postgres:16`             | Major version pinned; patch version is not |
-| act_runner | `gitea/act_runner:latest` | Needs pin to 0.4.1                         |
+| Service    | Image                   |
+| ---------- | ----------------------- |
+| Gitea      | `gitea/gitea:1.26.1`    |
+| PostgreSQL | `postgres:16.13`        |
+| Runner     | `gitea/runner:0.6.1`    |
 
-The `:latest` tags on Gitea and act_runner are a known anti-pattern.
-They will be replaced with explicit version pins in a dedicated session alongside the CVE-2026-27780 patch (branch protection bypass, fixed in Gitea 1.26.0).
+Gitea 1.26.1 includes the fix for CVE-2026-27780 (branch protection bypass).
+The runner image was renamed from `gitea/act_runner` to `gitea/runner` as of the 0.6.x series.
