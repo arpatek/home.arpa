@@ -11,10 +11,31 @@
 
 ## Overview
 
-WireGuard VPN server providing an encrypted tunnel between remote devices and the home network. Allows access to all homelab services, VMs, Proxmox, Pi-hole, and the NAS from outside the network.
+WireGuard VPN server providing an encrypted tunnel between remote devices and the home network.
+Allows access to all homelab services, VMs, Proxmox, Pi-hole, and the NAS from outside the network.
 
-WireGuard is built into the Linux kernel since 5.6 — no external packages required beyond `wireguard-tools`.
+WireGuard is built into the Linux kernel since 5.6.
+No external packages are required beyond `wireguard-tools`.
 Running on kernel `6.12.62+rpt-rpi-v8`.
+
+Home IP is dynamic.
+A Cloudflare DDNS client keeps a subdomain pointed at the current public IP so peers always have a stable endpoint to connect to.
+See [cloudflare-ddns](https://codeberg.org/arpatek/cloudflare-ddns) for implementation details.
+
+## Repository layout
+
+```
+wireguard/
+├── README.md                   # this file — host reference and config guide
+├── wg0.conf.example            # server config with private key removed
+├── rules.v4                    # iptables-persistent rules (filter + nat tables)
+├── 99-wireguard.conf           # sysctl: net.ipv4.ip_forward=1
+└── docs/
+    ├── architecture.md         # tunnel topology and traffic flow
+    ├── decisions.md            # design choices and rationale
+    ├── gotchas.md              # issues encountered during setup
+    └── upgrading.md            # kernel and OS upgrade considerations
+```
 
 ## Installation
 
@@ -22,13 +43,20 @@ Running on kernel `6.12.62+rpt-rpi-v8`.
 sudo apt install wireguard iptables-persistent
 ```
 
-Managed via `wg-quick` and systemd. Enabled at boot:
+Managed via `wg-quick` and systemd, enabled at boot:
 
 ```bash
 sudo systemctl enable --now wg-quick@wg0
 ```
 
-## Network Topology
+IP forwarding enabled via sysctl so the kernel routes packets between `wg0` and `eth0`:
+
+```bash
+echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/99-wireguard.conf
+sudo sysctl --system
+```
+
+## Network topology
 
 ```
 Internet
@@ -53,15 +81,17 @@ netrunner-rpi (10.33.111.141) ← WireGuard server (10.10.10.1)
 | Setting           | Value                                          |
 | ----------------- | ---------------------------------------------- |
 | Interface         | `wg0`                                          |
-| Server Address    | `10.10.10.1/24`                                |
-| Listen Port       | `55055`                                        |
+| Server address    | `10.10.10.1/24`                                |
+| Listen port       | `55055`                                        |
 | MTU               | `1380`                                         |
-| Server Public Key | `IOqqhFIWdAm+PkkCuN5/oy73cJsonykXelWKMjWQ81Q=` |
+| Server public key | `IOqqhFIWdAm+PkkCuN5/oy73cJsonykXelWKMjWQ81Q=` |
 
-### MTU Tuning
+The private key is stored only in `/etc/wireguard/wg0.conf` on `netrunner-rpi` and is never committed to this repo.
 
-Default WireGuard MTU is `1420` (standard Ethernet `1500` minus ~`60` bytes of WireGuard encryption overhead).
-Set to `1380` for stability due to additional ISP overhead causing packet fragmentation above this value.
+### MTU tuning
+
+Default WireGuard MTU is `1420` (standard Ethernet `1500` minus ~`60` bytes of WireGuard overhead).
+Set to `1380` for stability due to additional ISP overhead causing fragmentation above this value.
 
 ```
 Standard Ethernet MTU:    1500
@@ -70,43 +100,34 @@ Theoretical safe MTU:     1440
 Configured MTU:           1380 (conservative, stable under load)
 ```
 
-TCP MSS is also clamped to `1320` via iptables to prevent TCP connections from negotiating segment sizes too large for the tunnel.
+TCP MSS is clamped to `1320` via iptables to prevent TCP connections from negotiating segment sizes too large for the tunnel.
 
-### IP Forwarding
-
-Enabled via sysctl so the kernel routes packets between `wg0` and `eth0`:
-
-```bash
-echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/99-wireguard.conf
-sudo sysctl --system
-```
-
-### NAT and Forwarding Rules
+### NAT and forwarding rules
 
 WireGuard client traffic is masqueraded behind the Pi's LAN IP so that LAN devices receive traffic from a known address and can route responses back correctly.
 
-PostUp/PostDown hooks in `wg0.conf` apply and remove NAT rules automatically when the WireGuard interface comes up or goes down:
+PostUp/PostDown hooks in `wg0.conf` apply and remove NAT rules automatically when the interface comes up or down:
 
 ```
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT
-PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT
+PostUp   = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT
 PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 ```
 
-Persistent iptables rules saved via `iptables-persistent`:
+Rules are also saved via `iptables-persistent` for persistence across reboots:
 
 ```
-# NAT - masquerade WireGuard subnet behind Pi's LAN IP
+# NAT — masquerade WireGuard subnet behind Pi's LAN IP
 -A POSTROUTING -s 10.10.10.0/24 -o eth0 -j MASQUERADE
 
-# FORWARD - allow WireGuard clients to reach LAN
+# FORWARD — allow WireGuard clients to reach LAN
 -A FORWARD -i wg0 -o eth0 -j ACCEPT
 
-# FORWARD - allow return traffic for established connections
+# FORWARD — allow return traffic for established connections
 -A FORWARD -i eth0 -o wg0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# TCPMSS clamping - prevent TCP fragmentation through tunnel
+# TCPMSS clamping — prevent TCP fragmentation through tunnel
 -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1320
 ```
 
@@ -118,22 +139,17 @@ Persistent iptables rules saved via `iptables-persistent`:
 | deck-alpha | iPhone      | `10.10.10.11` | `ch7E8s+mtl3+m1vKf4UCJqokzs6rAc1Ax2QGVmd64DQ=` |
 | deck-gamma | iPad Mini   | `10.10.10.12` | `m20JP1PK3hSBT5cbyaf/ZCB+lPUcbJX/zEVQPdTnrX0=` |
 
-### Port Forwarding
+### Port forwarding
 
 Configured on Netgear gateway:
 
-| Rule      | Protocol | External Port | Internal IP   | Internal Port |
+| Rule      | Protocol | External port | Internal IP   | Internal port |
 | --------- | -------- | ------------- | ------------- | ------------- |
 | WIREGUARD | UDP      | 55055         | 10.33.111.141 | 55055         |
 
-## Dynamic DNS
+## DNS
 
-Home IP is dynamic — a Cloudflare DDNS client keeps a subdomain pointed at the current public IP so WireGuard peers always have a stable endpoint to connect to. See [cloudflare-ddns](https://codeberg.org/arpatek/cloudflare-ddns) for implementation details.
-
-## Notes
-
-- Private key is stored only in `/etc/wireguard/wg0.conf` on `netrunner-rpi` — never committed to this repo
-- WireGuard subnet `10.10.10.0/24` is served by Pi-hole for DNS and DHCP
-- Reverse DNS for the WireGuard subnet is handled by Pi-hole on port `55055`
-- Firewall managed via iptables and iptables-persistent — UFW is not installed
-- See [RFC 1918](https://datatracker.ietf.org/doc/html/rfc1918) for private address space
+WireGuard clients use Pi-hole (`10.33.111.141`) for DNS resolution.
+The `10.10.10.0/24` tunnel subnet routes through the LAN via NAT, so DNS queries from connected clients reach Pi-hole the same way LAN devices do.
+Firewall managed via iptables and iptables-persistent.
+UFW is not installed.
