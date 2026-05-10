@@ -55,7 +55,12 @@ All VMs attach to `vmbr0` and receive IPs from Pi-hole DHCP or via cloud-init st
 ```
 proxmox/
 ├── README.md                   # this file — host info and VM inventory
-└── provision-k3s.sh            # qm commands used to provision the k3s cluster VMs
+├── provision-k3s.sh            # VM provisioning script for the k3s cluster
+└── docs/
+    ├── architecture.md         # KVM/QEMU stack, storage backends, bridge networking
+    ├── decisions.md            # Proxmox vs XCP-ng, hardware choice, storage layout
+    ├── gotchas.md              # enterprise repo issue on fresh install
+    └── upgrading.md            # package and major version upgrade procedures
 ```
 
 ## Useful commands
