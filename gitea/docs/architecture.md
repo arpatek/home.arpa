@@ -43,9 +43,9 @@ flowchart LR
     GITSSH["git client (SSH)"]
 
     BROWSER -->|"HTTP :3000"| GITEA
-    GITSSH  -->|"SSH :2222"|  GITEA
-    GITEA   -->|"SQL :5432"|  DB
-    RUNNER  -->|"HTTP poll"|  GITEA
+    GITSSH  -->|"SSH :2222"| GITEA
+    GITEA   -->|"SQL :5432"| DB
+    RUNNER  -->|"HTTP poll"| GITEA
     RUNNER  -.->|"spawn containers"| SOCK
 
     linkStyle default stroke:#000000,stroke-width:2px;
