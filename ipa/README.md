@@ -37,7 +37,9 @@ ipa/
 ├── chrony.conf                 # NTP configuration
 ├── default.conf                # IPA framework default configuration
 ├── firewall-rules.txt          # firewall-cmd zone state dump
-├── sssd.conf                   # SSSD configuration (server-side)
+├── krb5.conf                   # Kerberos realm configuration (client-side, all enrolled hosts)
+├── sssd.conf                   # SSSD configuration (server-side, prod-ipa-0)
+├── sssd.conf.client            # SSSD configuration (client-side reference, prod-mon-0)
 └── docs/
     ├── architecture.md         # FreeIPA component breakdown and authentication flow
     ├── decisions.md            # design choices and rationale
