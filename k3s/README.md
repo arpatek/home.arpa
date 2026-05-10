@@ -44,6 +44,78 @@ k3s/
     └── upgrading.md            # k3s upgrade procedures
 ```
 
+## Deployment
+
+### 1. Provision VMs
+
+Run [proxmox/provision-k3s.sh](../proxmox/provision-k3s.sh) on `devstem` to create and start the three VMs.
+Wait ~60 seconds for cloud-init to finish, then SSH in as `sysadmin`.
+
+### 2. Add sysadmin user and enroll in IPA
+
+On each node:
+
+```bash
+# Add sysadmin user (cloud-init creates it, but set the password)
+sudo passwd sysadmin
+
+# Set FQDN hostname
+sudo hostnamectl set-hostname <hostname>.home.arpa
+
+# Add hosts entries
+echo "10.33.111.100 prod-ipa-0.home.arpa prod-ipa-0" | sudo tee -a /etc/hosts
+echo "<node-ip> <hostname>.home.arpa <hostname>" | sudo tee -a /etc/hosts
+
+# Enroll in IPA
+sudo apt install freeipa-client -y
+sudo ipa-client-install \
+  --domain=home.arpa \
+  --server=prod-ipa-0.home.arpa \
+  --realm=HOME.ARPA \
+  --hostname=<hostname>.home.arpa \
+  --principal admin \
+  --mkhomedir
+```
+
+### 3. Install k3s on the master
+
+```bash
+ssh arpatek@10.33.111.103
+
+curl -sfL https://get.k3s.io | sudo sh -s - server \
+  --node-taint node-role.kubernetes.io/control-plane=:NoSchedule \
+  --tls-san prod-k3s-master-0.home.arpa \
+  --tls-san 10.33.111.103 \
+  --write-kubeconfig-mode 644
+```
+
+### 4. Join the workers
+
+Get the node token from the master:
+
+```bash
+sudo cat /var/lib/rancher/k3s/server/node-token
+```
+
+On each worker:
+
+```bash
+export K3S_URL=https://10.33.111.103:6443
+export K3S_TOKEN=<token-from-master>
+curl -sfL https://get.k3s.io | sudo -E sh -
+```
+
+### 5. Label worker nodes
+
+```bash
+kubectl label node prod-k3s-worker-0.home.arpa node-role.kubernetes.io/worker=worker
+kubectl label node prod-k3s-worker-1.home.arpa node-role.kubernetes.io/worker=worker
+```
+
+### 6. Set up kubectl access
+
+See [Cluster access](#cluster-access) below.
+
 ## Cluster access
 
 The cluster API server runs on `prod-k3s-master-0` at port 6443.
