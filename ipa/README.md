@@ -27,6 +27,23 @@ All homelab VMs are enrolled as IPA clients and authenticate via SSSD.
 Access control is enforced through HBAC rules rather than local user accounts.
 
 Rocky Linux 9.7 was chosen for RHEL compatibility and alignment with RHCSA/RHCE certification objectives.
+This host is load-bearing for the entire lab — DNS and authentication depend on it.
+
+## Repository layout
+
+```
+ipa/
+├── README.md                   # this file — host block, config reference, operational guide
+├── chrony.conf                 # NTP configuration
+├── default.conf                # IPA framework default configuration
+├── firewall-rules.txt          # firewall-cmd zone state dump
+├── sssd.conf                   # SSSD configuration (server-side)
+└── docs/
+    ├── architecture.md         # FreeIPA component breakdown and authentication flow
+    ├── decisions.md            # design choices and rationale
+    ├── gotchas.md              # issues encountered during the build
+    └── upgrading.md            # upgrade procedures for IPA and the host OS
+```
 
 ## Installation
 
@@ -38,7 +55,7 @@ sudo vim /etc/hosts  # add hostname entry
 sudo dnf update -y
 ```
 
-### Server Installation
+### Server installation
 
 FreeIPA server and DNS were installed and configured in stages:
 
@@ -57,10 +74,10 @@ sudo ipa-server-install --setup-dns
 sudo ipa-dns-install
 ```
 
-### NTP Configuration
+### NTP configuration
 
 Accurate time is critical for Kerberos — tickets will fail if clocks are skewed more than 5 minutes between client and server.
-Chrony was configured manually:
+Chrony was configured manually after installation:
 
 ```bash
 sudo vim /etc/chrony.conf
@@ -74,7 +91,7 @@ chronyc sources -v
 chronyc tracking
 ```
 
-### Firewall Configuration
+### Firewall configuration
 
 Firewall rules were added incrementally as services were configured:
 
@@ -99,7 +116,7 @@ sudo firewall-cmd --add-port=464/udp --permanent
 sudo firewall-cmd --reload
 ```
 
-### Client Enrollment
+### Client enrollment
 
 RHEL/Rocky:
 
@@ -117,7 +134,14 @@ sudo ipa-client-install --domain=home.arpa --server=prod-ipa-0.home.arpa \
   --realm=HOME.ARPA --mkhomedir --hostname=<hostname>.home.arpa
 ```
 
-## Realm Configuration
+After enrollment, add DNS records manually:
+
+```bash
+ipa dnsrecord-add home.arpa <hostname> --a-rec <ip>
+ipa dnsrecord-add 111.33.10.in-addr.arpa <last-octet> --ptr-rec <hostname>.home.arpa.
+```
+
+## Realm configuration
 
 | Setting           | Value                  |
 | ----------------- | ---------------------- |
@@ -135,7 +159,7 @@ FreeIPA's integrated BIND serves as the primary DNS authority for the `home.arpa
 Enrolled clients use `prod-ipa-0` (`10.33.111.100`) as their primary DNS server.
 Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstream resolution.
 
-### Forward Zone
+### Forward zone
 
 | Setting          | Value                            |
 | ---------------- | -------------------------------- |
@@ -145,7 +169,7 @@ Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstre
 | Allow Query      | any                              |
 | Allow Transfer   | none                             |
 
-### Reverse Zone
+### Reverse zone
 
 | Setting          | Value                        |
 | ---------------- | ---------------------------- |
@@ -155,16 +179,7 @@ Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstre
 | Allow Query      | any                          |
 | Allow Transfer   | none                         |
 
-### Adding DNS Records
-
-DNS records are added manually when new hosts are enrolled:
-
-```bash
-ipa dnsrecord-add home.arpa <hostname> --a-rec <ip>
-ipa dnsrecord-add 111.33.10.in-addr.arpa <last-octet> --ptr-rec <hostname>.home.arpa.
-```
-
-## Identity Management
+## Identity management
 
 Authentication is handled via Kerberos.
 SSSD manages client-side identity resolution and caching on enrolled hosts.
@@ -187,7 +202,7 @@ SSSD manages client-side identity resolution and caching on enrolled hosts.
 | ipausers     | —          | Default group for all users |
 | trust admins | —          | Trusts administrators       |
 
-### Host Groups
+### Host groups
 
 | Host Group  | Description                 |
 | ----------- | --------------------------- |
@@ -196,7 +211,7 @@ SSSD manages client-side identity resolution and caching on enrolled hosts.
 | prod-vms    | Production Virtual Machines |
 | ipaservers  | IPA server hosts            |
 
-### Enrolled Hosts
+### Enrolled hosts
 
 | Host                        | Role          |
 | --------------------------- | ------------- |
@@ -210,12 +225,12 @@ SSSD manages client-side identity resolution and caching on enrolled hosts.
 | dev-ubuntu-0.home.arpa      | Ubuntu dev VM |
 | ctrl-node.home.arpa         | Control node  |
 
-## Access Control
+## Access control
 
 Access control is enforced via HBAC (Host-Based Access Control) rules evaluated by SSSD on each enrolled host.
 HBAC rules govern PAM service access independently of sudo rules — both must be configured to grant full privileged access to a host.
 
-### HBAC Rules
+### HBAC rules
 
 | Rule               | User Groups | Host Groups                                | Services     | Enabled  |
 | ------------------ | ----------- | ------------------------------------------ | ------------ | -------- |
@@ -223,17 +238,17 @@ HBAC rules govern PAM service access independently of sudo rules — both must b
 | allow_ssh_devops   | devs        | controllers, dev-vms, ipaservers, prod-vms | sshd, sudo   | Enabled  |
 | allow_systemd-user | all         | all                                        | systemd-user | Enabled  |
 
-> `allow_all` is intentionally disabled. Access is granted explicitly via
-> `allow_ssh_devops` to control which users can reach which hosts.
+`allow_all` is intentionally disabled.
+Access is granted explicitly via `allow_ssh_devops` to control which users can reach which hosts.
 
-### Sudo Rules
+### Sudo rules
 
 | Rule     | Users        | Commands | Enabled  |
 | -------- | ------------ | -------- | -------- |
 | admins   | admins group | all      | Disabled |
 | dev_sudo | devs group   | all      | Enabled  |
 
-### Configuring HBAC and Sudo
+### Configuring HBAC and sudo
 
 ```bash
 # Create HBAC rule
@@ -251,23 +266,3 @@ ipa sudorule-add-user dev_sudo --users=jgarcia
 ipa sudorule-add-allow-command dev_sudo --sudocmds=all
 ipa sudorule-enable dev_sudo
 ```
-
-## Gotchas
-
-- **HBAC and sudo are independent** — HBAC governs PAM service access (e.g. sshd), sudo rules govern privilege escalation.
-  Both must allow access for a user to SSH in AND run sudo. Configuring sudo alone is not enough.
-- **Kerberos ticket expiry** — tickets expire and must be renewed with `kinit admin`.
-  Running `ipa` commands without a valid ticket returns `Ticket expired`.
-- **SSSD KnownHostsCommand** — FreeIPA configures SSSD to serve SSH host keys via `sss_ssh_knownhosts`.
-  This conflicts with services running SSH on non-standard ports (e.g. Gitea on port 2222) where the stored host key doesn't match.
-  Workaround: set `KnownHostsCommand none` in `~/.ssh/config` for the affected host.
-- **`sudocmds=all` is lowercase** — passing `ALL` uppercase to `ipa sudorule-add-allow-command` will fail.
-  Use `all` lowercase.
-- **DNS must be configured before clients enroll** — SRV records for `_kerberos` and `_ldap` must resolve correctly or client enrollment will fail.
-  Verify with: `dig _kerberos._tcp.home.arpa SRV`
-
-## Notes
-
-- Single IPA master — no replica configured yet
-- `allow_all` HBAC rule disabled in favor of explicit access rules
-- Rocky Linux 9.7 chosen for RHEL compatibility and RHCSA/RHCE certification alignment
