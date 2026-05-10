@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arpatek-dev
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arpatek-dev
+  template:
+    metadata:
+      labels:
+        app: arpatek-dev
+    spec:
+      imagePullSecrets:
+        - name: gitea-registry
+      containers:
+        - name: arpatek-dev
+          image: git.arpatek.dev/arpatek/arpatek.dev:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: arpatek-dev
+  namespace: default
+spec:
+  selector:
+    app: arpatek-dev
+  ports:
+    - port: 8000
+      targetPort: 8000
