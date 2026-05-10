@@ -25,18 +25,23 @@ Planned workloads:
 
 ## Stack versions
 
-| Component  | Version         |
-| ---------- | --------------- |
-| k3s        | v1.35.4+k3s1    |
-| Kubernetes | v1.35.4         |
-| CNI        | Flannel (default) |
-| Ingress    | Traefik (default) |
+| Component   | Version           |
+| ----------- | ----------------- |
+| k3s         | v1.35.4+k3s1      |
+| Kubernetes  | v1.35.4           |
+| CNI         | Flannel (default)  |
+| Ingress     | Traefik (default)  |
+| cert-manager | v1.20.2          |
 
 ## Repository layout
 
 ```
 k3s/
 ├── README.md                   # this file — cluster overview and node inventory
+├── manifests/
+│   └── cert-manager/
+│       ├── clusterissuer.yaml  # Let's Encrypt ClusterIssuer (Cloudflare DNS-01)
+│       └── wildcard-cert.yaml  # *.arpatek.dev wildcard certificate
 └── docs/
     ├── architecture.md         # control plane components, node roles, data flow
     ├── decisions.md            # k3s vs alternatives, cluster design choices

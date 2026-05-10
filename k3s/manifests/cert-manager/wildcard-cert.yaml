@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: arpatek-dev-wildcard
+  namespace: default
+spec:
+  secretName: arpatek-dev-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - arpatek.dev
+    - "*.arpatek.dev"
