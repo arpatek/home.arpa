@@ -113,7 +113,7 @@ The DDNS client runs as a systemd service on `netrunner-rpi` and updates the rec
 
 ## Smaller decisions
 
-**MTU 1380 with MSS clamp at 1320.** The default WireGuard MTU of 1420 caused packet fragmentation under this ISP connection, visible as intermittent TCP drops on large transfers. Setting MTU to 1380 resolved it. The MSS clamp at 1320 prevents TCP from negotiating segment sizes that would exceed the tunnel MTU after headers are added. See [gotchas.md](gotchas.md) for the full story.
+**MTU 1380.** The default WireGuard MTU of 1420 caused packet fragmentation under this ISP connection, visible as intermittent TCP drops on large transfers. Setting MTU to 1380 resolved it. See [gotchas.md](gotchas.md) for the full story.
 
 **iptables-persistent over nftables.** On Debian 13 (and Raspberry Pi OS built on it), `iptables` is already the `iptables-nft` compatibility layer — it writes nftables rules in the kernel under the hood. The ruleset here is four lines. The clarity and expressiveness advantages of native nftables syntax only matter for complex multi-table rulesets. Migration would mean rewriting the rules, updating the PostUp/PostDown hooks in `wg0.conf`, and replacing `iptables-persistent` — real work for no functional gain at this scale. If the ruleset ever grows significantly, migrating to native nftables syntax becomes worth reconsidering.
 

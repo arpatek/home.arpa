@@ -100,22 +100,12 @@ Theoretical safe MTU:     1440
 Configured MTU:           1380 (conservative, stable under load)
 ```
 
-TCP MSS is clamped to `1320` via iptables to prevent TCP connections from negotiating segment sizes too large for the tunnel.
 
 ### NAT and forwarding rules
 
 WireGuard client traffic is masqueraded behind the Pi's LAN IP so that LAN devices receive traffic from a known address and can route responses back correctly.
 
-PostUp/PostDown hooks in `wg0.conf` apply and remove NAT rules automatically when the interface comes up or down:
-
-```
-PostUp   = iptables -A FORWARD -i wg0 -j ACCEPT
-PostUp   = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT
-PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-```
-
-Rules are also saved via `iptables-persistent` for persistence across reboots:
+Rules are managed via `iptables-persistent` and loaded at boot independently of WireGuard:
 
 ```
 # NAT — masquerade WireGuard subnet behind Pi's LAN IP
@@ -126,9 +116,6 @@ Rules are also saved via `iptables-persistent` for persistence across reboots:
 
 # FORWARD — allow return traffic for established connections
 -A FORWARD -i eth0 -o wg0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-# TCPMSS clamping — prevent TCP fragmentation through tunnel
--A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1320
 ```
 
 ### Peers
