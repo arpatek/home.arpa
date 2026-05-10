@@ -616,7 +616,7 @@ netmask = "255.255.255.0" ### CHANGED, default = ""
 #     The lease time can be in seconds, or minutes (e.g., "45m") or hours (e.g., "1h")
 #     or days (like "2d") or even weeks ("1w"). You may also use "infinite" as string
 #     but be aware of the drawbacks
-leaseTime = "1m" ### CHANGED, default = ""
+leaseTime = "24h" ### CHANGED, default = ""
 
 # Should Pi-hole make an attempt to also satisfy IPv6 address requests (be aware that
 # IPv6 works a whole lot different than IPv4)
