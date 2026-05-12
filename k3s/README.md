@@ -55,15 +55,25 @@ k3s exposes it publicly through a headless Service + Endpoints object pointing a
 k3s/
 ├── README.md                       # this file — cluster overview and node inventory
 ├── manifests/
+│   ├── https-transport.yaml        # ServersTransport for HTTPS backends (Pi-hole, IPA)
 │   ├── arpatek-dev/
 │   │   ├── deployment.yaml         # arpatek.dev app — pulls image from Gitea registry
 │   │   └── ingress.yaml            # Traefik ingress + Service for arpatek.dev
 │   ├── cert-manager/
 │   │   ├── clusterissuer.yaml      # Let's Encrypt ClusterIssuer (Cloudflare DNS-01)
 │   │   └── wildcard-cert.yaml      # *.arpatek.dev wildcard certificate
-│   └── gitea/
-│       ├── ingress.yaml            # Traefik ingress for git.arpatek.dev
-│       └── service.yaml            # headless Service + Endpoints → prod-git-0:3000
+│   ├── gitea/
+│   │   ├── ingress.yaml            # Traefik ingress for git.arpatek.dev
+│   │   └── service.yaml            # headless Service + Endpoints → prod-git-0:3000
+│   ├── ipa/
+│   │   ├── ingress.yaml            # Traefik ingress for ipa.arpatek.dev
+│   │   └── service.yaml            # headless Service + Endpoints → prod-ipa-0:443
+│   ├── monitoring/
+│   │   ├── ingress.yaml            # Traefik ingress for gf.arpatek.dev + pm.arpatek.dev
+│   │   └── service.yaml            # headless Services + Endpoints → prod-mon-0:3000/9090
+│   └── pihole/
+│       ├── ingress.yaml            # Traefik ingress for pi.arpatek.dev
+│       └── service.yaml            # headless Service + Endpoints → netrunner-rpi:443
 └── docs/
     ├── architecture.md             # control plane components, node roles, data flow
     ├── decisions.md                # k3s vs alternatives, cluster design choices
