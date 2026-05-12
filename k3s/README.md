@@ -19,9 +19,22 @@ k3s is a lightweight Kubernetes distribution — same API as full Kubernetes but
 The master is tainted `control-plane:NoSchedule` — it runs only the Kubernetes control plane.
 All workloads schedule exclusively on the two worker nodes.
 
-Planned workloads:
-- Portfolio website
-- FastAPI application (k3s capstone project)
+## Workloads
+
+### arpatek.dev
+
+Personal site and CI/CD capstone, running at `arpatek.dev`.
+FastAPI application that serves both HTML and curl-friendly terminal output.
+Try it: `curl arpatek.dev`
+
+The CI pipeline runs on `prod-git-0` via act_runner.
+Each push to the `arpatek/arpatek.dev` repo on Gitea triggers a build that packages the app into a container image and pushes it to the Gitea container registry at `git.arpatek.dev`.
+k3s pulls the updated image using the `gitea-registry` imagePullSecret and `imagePullPolicy: Always`.
+
+### git.arpatek.dev
+
+Gitea is not a k3s workload — it runs on `prod-git-0` via Docker Compose.
+k3s exposes it publicly through a headless Service + Endpoints object pointing at `10.33.111.101:3000`, with Traefik routing `git.arpatek.dev` to that backend over TLS.
 
 ## Stack versions
 
@@ -37,16 +50,22 @@ Planned workloads:
 
 ```
 k3s/
-├── README.md                   # this file — cluster overview and node inventory
+├── README.md                       # this file — cluster overview and node inventory
 ├── manifests/
-│   └── cert-manager/
-│       ├── clusterissuer.yaml  # Let's Encrypt ClusterIssuer (Cloudflare DNS-01)
-│       └── wildcard-cert.yaml  # *.arpatek.dev wildcard certificate
+│   ├── arpatek-dev/
+│   │   ├── deployment.yaml         # arpatek.dev app — pulls image from Gitea registry
+│   │   └── ingress.yaml            # Traefik ingress + Service for arpatek.dev
+│   ├── cert-manager/
+│   │   ├── clusterissuer.yaml      # Let's Encrypt ClusterIssuer (Cloudflare DNS-01)
+│   │   └── wildcard-cert.yaml      # *.arpatek.dev wildcard certificate
+│   └── gitea/
+│       ├── ingress.yaml            # Traefik ingress for git.arpatek.dev
+│       └── service.yaml            # headless Service + Endpoints → prod-git-0:3000
 └── docs/
-    ├── architecture.md         # control plane components, node roles, data flow
-    ├── decisions.md            # k3s vs alternatives, cluster design choices
-    ├── gotchas.md              # issues hit during provisioning and cluster setup
-    └── upgrading.md            # k3s upgrade procedures
+    ├── architecture.md             # control plane components, node roles, data flow
+    ├── decisions.md                # k3s vs alternatives, cluster design choices
+    ├── gotchas.md                  # issues hit during provisioning and cluster setup
+    └── upgrading.md                # k3s upgrade procedures
 ```
 
 ## Deployment
