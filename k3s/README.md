@@ -71,9 +71,12 @@ k3s/
 │   ├── monitoring/
 │   │   ├── ingress.yaml            # Traefik ingress for gf.arpatek.dev + pm.arpatek.dev
 │   │   └── service.yaml            # headless Services + Endpoints → prod-mon-0:3000/9090
-│   └── pihole/
-│       ├── ingress.yaml            # Traefik ingress for pi.arpatek.dev
-│       └── service.yaml            # headless Service + Endpoints → netrunner-rpi:443
+│   ├── pihole/
+│   │   ├── ingress.yaml            # Traefik ingress for pi.arpatek.dev
+│   │   └── service.yaml            # headless Service + Endpoints → netrunner-rpi:443
+│   └── proxmox/
+│       ├── ingress.yaml            # Traefik ingress for pve.arpatek.dev
+│       └── service.yaml            # headless Service + Endpoints → devstem:8006
 └── docs/
     ├── architecture.md             # control plane components, node roles, data flow
     ├── decisions.md                # k3s vs alternatives, cluster design choices
