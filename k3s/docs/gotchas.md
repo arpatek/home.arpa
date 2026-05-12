@@ -94,3 +94,59 @@ chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 **Broken assumption.**
 I assumed the default kubectl download URL would serve the right architecture.
 The URL requires the architecture to be specified explicitly — it does not auto-detect.
+
+## Reverse proxying services with absolute hostname redirects
+
+**Symptom.**
+Navigating to `pi.arpatek.dev` or a similar subdomain through the Traefik ingress redirects the browser to the backend's own hostname (e.g. `netrunner-rpi.home.arpa/admin/`), bypassing the proxy entirely.
+
+**Cause.**
+Some services (Pi-hole, and others running lighttpd or Apache) issue absolute redirects using their configured `ServerName` rather than the `Host` header from the incoming request.
+Two separate redirects compound the problem: one for the subpath (`/` → `/admin/`) and one for the hostname mismatch.
+A path redirect middleware at the Traefik level handles the first but not the second.
+
+**Fix.**
+Add a `headers` middleware that overrides the `Host` header Traefik sends to the backend, alongside the path redirect:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: pihole-set-host
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      Host: "netrunner-rpi.home.arpa"
+```
+
+Reference both middlewares in the ingress annotation:
+
+```yaml
+traefik.ingress.kubernetes.io/router.middlewares: default-pihole-redirect-admin@kubernetescrd,default-pihole-set-host@kubernetescrd
+```
+
+**Broken assumption.**
+I assumed a path redirect at the Traefik level would be enough to avoid backend redirects.
+The backend still sees the original `Host` header and redirects to its own canonical name regardless of the request path.
+The Host header must be overridden on the backend connection separately from any client-facing redirect.
+
+## FreeIPA cannot be reverse proxied behind a different hostname
+
+**Symptom.**
+Navigating to `ipa.arpatek.dev/ipa/ui/` shows a blank page with no login form.
+The URL is correct but nothing renders.
+
+**Cause.**
+FreeIPA's security model is tightly coupled to its configured server hostname (`prod-ipa-0.home.arpa`).
+Even with the Host header overridden at the Traefik level, session cookies are set with `Domain: prod-ipa-0.home.arpa` and are not sent by the browser on subsequent requests to `ipa.arpatek.dev`.
+CSRF protections also check the `Referer` header against the canonical hostname.
+The result is that the SPA loads but all API calls fail silently, leaving a blank page.
+
+**Fix.**
+Do not reverse proxy FreeIPA behind a different hostname.
+Access the web UI directly at `https://prod-ipa-0.home.arpa/ipa/ui/`, which is reachable on the LAN and via WireGuard.
+
+**Broken assumption.**
+I assumed overriding the Host header would be sufficient to make the proxy transparent.
+FreeIPA's authentication and session management are built around a single canonical hostname in ways that go beyond the Host header — cookie domains, CSRF tokens, and Kerberos service principals are all tied to `prod-ipa-0.home.arpa`.
