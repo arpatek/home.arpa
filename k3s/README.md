@@ -65,9 +65,6 @@ k3s/
 │   ├── gitea/
 │   │   ├── ingress.yaml            # Traefik ingress for git.arpatek.dev
 │   │   └── service.yaml            # headless Service + Endpoints → prod-git-0:3000
-│   ├── ipa/
-│   │   ├── ingress.yaml            # Traefik ingress for ipa.arpatek.dev
-│   │   └── service.yaml            # headless Service + Endpoints → prod-ipa-0:443
 │   ├── monitoring/
 │   │   ├── ingress.yaml            # Traefik ingress for gf.arpatek.dev + pm.arpatek.dev
 │   │   └── service.yaml            # headless Services + Endpoints → prod-mon-0:3000/9090
