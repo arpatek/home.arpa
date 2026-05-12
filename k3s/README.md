@@ -27,8 +27,11 @@ Personal site and CI/CD capstone, running at `arpatek.dev`.
 FastAPI application that serves both HTML and curl-friendly terminal output.
 Try it: `curl arpatek.dev`
 
+Source code and pipeline configuration live in the `arpatek/arpatek.dev` repository on Gitea (`git.arpatek.dev`).
+That repo is its own project — this directory only contains the k3s manifests needed to run it.
+
 The CI pipeline runs on `prod-git-0` via act_runner.
-Each push to the `arpatek/arpatek.dev` repo on Gitea triggers a build that packages the app into a container image and pushes it to the Gitea container registry at `git.arpatek.dev`.
+Each push to `arpatek/arpatek.dev` triggers a build that packages the app into a container image and pushes it to the Gitea container registry at `git.arpatek.dev`.
 k3s pulls the updated image using the `gitea-registry` imagePullSecret and `imagePullPolicy: Always`.
 
 ### git.arpatek.dev

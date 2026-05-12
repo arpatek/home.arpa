@@ -71,7 +71,7 @@ Common in small homelab clusters.
 **Why control-plane-only.**
 
 The two workers have 4GB RAM each — 8GB total workload capacity.
-The planned workloads (portfolio website, FastAPI application, supporting services) fit comfortably in that space.
+The current workload (`arpatek.dev` and supporting services) fits comfortably in that space.
 
 The control-plane-only pattern is what production Kubernetes environments use.
 Running the cluster this way means the operational model (master = control plane, workers = workloads) is accurate and transferable.
@@ -94,7 +94,7 @@ More appropriate when the goal is learning eBPF or building a production-grade n
 
 **Why Flannel.**
 
-For this cluster's workloads (a portfolio site and a FastAPI app), CNI selection has no practical impact on day-to-day operation.
+For this cluster's workload (`arpatek.dev`), CNI selection has no practical impact on day-to-day operation.
 Flannel is simple, well-understood, and maintained by the Kubernetes community.
 It handles pod-to-pod routing across nodes correctly, which is all that's needed here.
 Using Calico or Cilium would be optimizing a dimension that isn't a bottleneck.
@@ -111,7 +111,7 @@ More widespread in tutorials and production environments.
 **Why Traefik.**
 
 Traefik comes preconfigured in k3s with no additional setup.
-For exposing the portfolio website and FastAPI application over HTTP/HTTPS, Traefik handles the requirements without extra configuration.
+For exposing `arpatek.dev` and `git.arpatek.dev` over HTTPS, Traefik handles the requirements without extra configuration.
 
 If nginx-specific behavior becomes necessary (e.g. fine-grained lua scripting, specific nginx annotations), switching ingress controllers is a contained change — it affects only the Ingress resources and the controller deployment, not the applications themselves.
 
