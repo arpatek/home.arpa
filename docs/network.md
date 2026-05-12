@@ -54,30 +54,18 @@ Peers are configured with that hostname so reconnection is automatic after an IP
 
 ## Public exposure
 
-Two hostnames are reachable from the public internet.
+`wg.arpatek.dev` is the only hostname currently exposed — a grey-cloud A record pointing at the home public IP for WireGuard.
 
-### arpatek.dev
+`arpatek.dev` and `git.arpatek.dev` are ready but not yet publicly deployed.
+The planned mechanism is a Cloudflare Tunnel (`cloudflared` running in k3s), which requires no port forwarding and keeps the home IP out of the DNS records for the web services.
+That work lives in a separate project and repo.
 
-Cloudflare DNS points `arpatek.dev` at the home public IP.
-The home router forwards HTTPS (443) to the k3s worker nodes.
-Traefik (k3s ingress controller) routes requests to the `arpatek-dev` deployment.
-TLS is terminated at Traefik using a Let's Encrypt certificate issued by cert-manager via Cloudflare DNS-01.
-
-```
-client → Cloudflare → home public IP → router → k3s Traefik → arpatek.dev pod
-```
-
-```bash
-curl arpatek.dev               # terminal portfolio page
-curl arpatek.dev/man | less    # resume in manpage format
-```
-
-### git.arpatek.dev
-
-`git.arpatek.dev` shares the `*.arpatek.dev` wildcard certificate.
-Traefik routes it to a headless Service backed by a static Endpoints object pointing at `prod-git-0:3000` on the LAN.
-Gitea SSH (`prod-git-0:2222`) is not publicly exposed — SSH access is only available via WireGuard.
+Once deployed, the expected traffic path is:
 
 ```
-client → Cloudflare → home public IP → router → k3s Traefik → prod-git-0:3000
+client → Cloudflare edge → cloudflared tunnel → k3s Traefik → arpatek.dev pod
+client → Cloudflare edge → cloudflared tunnel → k3s Traefik → prod-git-0:3000
 ```
+
+TLS is handled by cert-manager using a Let's Encrypt wildcard certificate issued via Cloudflare DNS-01.
+Gitea SSH (`prod-git-0:2222`) will not be publicly exposed — SSH access remains WireGuard-only.
