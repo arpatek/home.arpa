@@ -1,0 +1,119 @@
+# Architecture
+
+What the home.arpa lab is, host by host, and how the services fit together.
+
+For the rationale behind specific choices, see the `decisions.md` in each service directory.
+For issues encountered during builds, see each service's `gotchas.md`.
+
+## Lab overview
+
+A single Proxmox VE host (`devstem`, `10.33.111.44`) runs all virtual machines.
+There is no cluster, no HA, and no live migration — this is a single-node homelab.
+
+## Hosts
+
+| Host | IP | OS | Role |
+| ---- | -- | -- | ---- |
+| `devstem` | `10.33.111.44` | Proxmox VE 9.1.9 | Hypervisor |
+| `prod-ipa-0` | `10.33.111.100` | Rocky Linux 9.7 | Identity (FreeIPA) |
+| `prod-git-0` | `10.33.111.101` | Debian 13.3 | Git + CI (Gitea) |
+| `prod-mon-0` | `10.33.111.102` | Debian 13.3 | Observability (PLG) |
+| `prod-k3s-master-0` | `10.33.111.103` | Debian 13.3 | k3s control plane |
+| `prod-k3s-worker-0` | `10.33.111.104` | Debian 13.3 | k3s worker |
+| `prod-k3s-worker-1` | `10.33.111.105` | Debian 13.3 | k3s worker |
+| `netrunner-rpi` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN |
+
+## Services
+
+**FreeIPA** — identity, authentication, and DNS authority for `home.arpa`.
+Every VM is enrolled as an IPA client.
+SSH access and sudo are governed by HBAC rules, not local user accounts.
+BIND provides authoritative DNS for the `home.arpa` zone and uses Pi-hole as its upstream forwarder.
+
+**Pi-hole** — network-wide DNS resolver, DHCP server, and content filter.
+Handles DHCP for the `10.33.111.0/24` network and the `10.10.10.0/24` WireGuard subnet.
+Non-enrolled devices and WireGuard clients use Pi-hole as their sole DNS server.
+All DNS queries that are not answered locally — including those forwarded from FreeIPA — pass through Pi-hole's blocklist.
+
+**Gitea** — self-hosted Git service, container registry, and CI/CD target.
+Hosts the `arpatek/arpatek.dev` repository.
+act_runner executes Gitea Actions pipelines and pushes built container images to `git.arpatek.dev`.
+
+**Monitoring** — PLG observability stack (Prometheus, Loki, Grafana).
+Hub-and-spoke: `prod-mon-0` holds storage and visualization; all other hosts run lightweight agents.
+Prometheus scrapes metrics; Loki receives logs; Grafana renders both.
+
+**k3s** — Kubernetes cluster running public workloads.
+Two worker nodes handle all scheduled pods; the master runs only the control plane.
+Traefik is the ingress controller.
+cert-manager issues TLS certificates from Let's Encrypt via Cloudflare DNS-01.
+Current workloads: `arpatek.dev` (FastAPI personal site) and a Traefik proxy for `git.arpatek.dev`.
+
+**WireGuard** — VPN server on `netrunner-rpi`.
+Provides remote access into the `10.33.111.0/24` network from anywhere.
+Connected clients use Pi-hole for DNS, matching LAN behavior.
+
+## Service dependencies
+
+```
+arpatek.dev (k3s)
+  ├── Gitea registry (prod-git-0) — image source for the deployment
+  └── cert-manager → Let's Encrypt → Cloudflare DNS-01
+
+All VMs
+  ├── FreeIPA (prod-ipa-0) — SSH auth, sudo, DNS for home.arpa
+  └── Pi-hole (netrunner-rpi) — upstream DNS resolver, DHCP
+
+Monitoring (prod-mon-0)
+  └── All hosts — Prometheus scrapes metrics, Loki receives logs
+```
+
+## Diagram
+
+```mermaid
+flowchart TB
+    Internet -->|arpatek.dev / git.arpatek.dev| Cloudflare
+    Cloudflare -->|HTTPS| TRAEFIK
+
+    subgraph DEVSTEM["devstem — Proxmox (10.33.111.44)"]
+        subgraph K3S["k3s cluster (10.33.111.103–105)"]
+            TRAEFIK[Traefik ingress]
+            ARPATEK[arpatek.dev pod]
+            TRAEFIK -->|arpatek.dev| ARPATEK
+            TRAEFIK -->|git.arpatek.dev| GIT_SVC[headless Service]
+        end
+        GIT[prod-git-0\nGitea + act_runner]
+        IPA[prod-ipa-0\nFreeIPA]
+        MON[prod-mon-0\nPrometheus + Loki + Grafana]
+
+        GIT_SVC -->|proxy| GIT
+        GIT -->|image push| ARPATEK
+    end
+
+    RPI[netrunner-rpi\nPi-hole + WireGuard]
+
+    K3S -.->|auth + DNS| IPA
+    GIT -.->|auth + DNS| IPA
+    MON -.->|auth + DNS| IPA
+    IPA -.->|upstream DNS| RPI
+
+    MON -->|scrape + receive| K3S
+    MON -->|scrape + receive| GIT
+    MON -->|scrape + receive| IPA
+    MON -->|scrape + receive| RPI
+
+    VPN_CLIENT[VPN clients] -->|WireGuard :55055| RPI
+    RPI -->|NAT → LAN| DEVSTEM
+```
+
+## State and storage
+
+All persistent state lives in bind-mounted directories on each host.
+Docker named volumes are not used — bind mounts keep data inspectable and backup-friendly.
+
+| Host | Path | Contents |
+| ---- | ---- | -------- |
+| `prod-ipa-0` | managed by FreeIPA packages | LDAP, Kerberos DB, DNS zone data |
+| `prod-git-0` | `/opt/gitea/{data,config,postgres,runner}` | repositories, CI artifacts, PostgreSQL data |
+| `prod-mon-0` | `/opt/monitoring/{prometheus,loki,grafana}` | metrics TSDB, log chunks, dashboards |
+| `netrunner-rpi` | `/etc/pihole/`, `/etc/wireguard/` | DNS config, VPN keys and peer config |
