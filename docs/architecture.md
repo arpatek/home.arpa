@@ -105,6 +105,18 @@ flowchart TB
 
     VPN_CLIENT[VPN clients] -->|WireGuard :55055| RPI
     RPI -->|NAT → LAN| DEVSTEM
+
+    linkStyle default stroke:#000000,stroke-width:2px;
+
+    classDef core      fill:#111111,stroke:#000000,color:#ffffff,stroke-width:2px;
+    classDef service   fill:#444444,stroke:#000000,color:#ffffff,stroke-width:1.5px;
+    classDef external  fill:#bbbbbb,stroke:#000000,color:#000000,stroke-width:1.5px;
+    classDef hostlabel fill:#d4a574,stroke:#000000,color:#000000,stroke-width:1.5px;
+
+    class TRAEFIK,ARPATEK core;
+    class GIT,IPA,MON,GIT_SVC,RPI service;
+    class Internet,Cloudflare,VPN_CLIENT external;
+    class DEVSTEM,K3S hostlabel;
 ```
 
 ## State and storage
