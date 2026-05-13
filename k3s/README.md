@@ -1,15 +1,60 @@
 # k3s
 
-## Cluster nodes
+## Hosts
 
-| Host                          | VMID | Role          | vCPUs | RAM  | Disk  | IP              |
-| ----------------------------- | ---- | ------------- | ----- | ---- | ----- | --------------- |
-| prod-k3s-master-0.home.arpa   | 103  | control-plane | 2     | 4GB  | 100GB | 10.33.111.103   |
-| prod-k3s-worker-0.home.arpa   | 104  | worker        | 2     | 4GB  | 100GB | 10.33.111.104   |
-| prod-k3s-worker-1.home.arpa   | 105  | worker        | 2     | 4GB  | 100GB | 10.33.111.105   |
+### prod-k3s-master-0
 
-All nodes: Debian 13.3 (Trixie), provisioned via cloud-init from a Proxmox template.
-See [proxmox/provision-k3s.sh](../proxmox/provision-k3s.sh) for the VM provisioning commands.
+|                  |                                                       |
+| ---------------- | ----------------------------------------------------- |
+| Hardware         | Virtual Machine on Proxmox (devstem)                  |
+| Machine Type     | q35                                                   |
+| Sockets          | 1                                                     |
+| Cores            | 2                                                     |
+| CPU Type         | host (physical CPU passthrough)                       |
+| RAM              | 4096 MB                                               |
+| Disk             | 100GB LVM (VirtIO SCSI, iothread enabled, discard=on) |
+| Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
+| OS               | Debian 13.3 (Trixie)                                  |
+| IP               | 10.33.111.103                                         |
+| Hostname         | prod-k3s-master-0.home.arpa                           |
+| Start on Boot    | Yes                                                   |
+| QEMU Guest Agent | Enabled                                               |
+
+### prod-k3s-worker-0
+
+|                  |                                                       |
+| ---------------- | ----------------------------------------------------- |
+| Hardware         | Virtual Machine on Proxmox (devstem)                  |
+| Machine Type     | q35                                                   |
+| Sockets          | 1                                                     |
+| Cores            | 2                                                     |
+| CPU Type         | host (physical CPU passthrough)                       |
+| RAM              | 4096 MB                                               |
+| Disk             | 100GB LVM (VirtIO SCSI, iothread enabled, discard=on) |
+| Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
+| OS               | Debian 13.3 (Trixie)                                  |
+| IP               | 10.33.111.104                                         |
+| Hostname         | prod-k3s-worker-0.home.arpa                           |
+| Start on Boot    | Yes                                                   |
+| QEMU Guest Agent | Enabled                                               |
+
+### prod-k3s-worker-1
+
+|                  |                                                       |
+| ---------------- | ----------------------------------------------------- |
+| Hardware         | Virtual Machine on Proxmox (devstem)                  |
+| Machine Type     | q35                                                   |
+| Sockets          | 1                                                     |
+| Cores            | 2                                                     |
+| CPU Type         | host (physical CPU passthrough)                       |
+| RAM              | 4096 MB                                               |
+| Disk             | 100GB LVM (VirtIO SCSI, iothread enabled, discard=on) |
+| Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
+| OS               | Debian 13.3 (Trixie)                                  |
+| IP               | 10.33.111.105                                         |
+| Hostname         | prod-k3s-worker-1.home.arpa                           |
+| Start on Boot    | Yes                                                   |
+| QEMU Guest Agent | Enabled                                               |
 
 ## Overview
 
