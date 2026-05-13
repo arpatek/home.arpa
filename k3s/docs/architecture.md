@@ -8,7 +8,8 @@ For things that broke during setup, see [gotchas.md](gotchas.md).
 ## What k3s is
 
 k3s is a fully conformant Kubernetes distribution packaged as a single binary.
-It implements the full Kubernetes API — anything that runs on full Kubernetes runs on k3s.
+It implements the full Kubernetes API.
+Anything that runs on full Kubernetes runs on k3s.
 The difference is in the packaging: k3s bundles containerd (container runtime), Flannel (CNI), Traefik (ingress), CoreDNS (cluster DNS), and SQLite or etcd (cluster state store) into one binary rather than requiring each to be installed separately.
 
 For a homelab, this means a working cluster in minutes rather than hours.
