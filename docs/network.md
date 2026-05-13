@@ -52,6 +52,18 @@ Connected clients use Pi-hole (`10.33.111.141`) for DNS, giving them the same re
 The server's public endpoint is a Cloudflare DDNS subdomain that tracks the dynamic home IP.
 Peers are configured with that hostname so reconnection is automatic after an IP change.
 
+## Firewall posture
+
+**Internet-facing:** the home router forwards only one port — UDP `55055` to `netrunner-rpi` for WireGuard.
+No other ports are open inbound from the internet.
+Web services (`arpatek.dev`, `git.arpatek.dev`) will reach the public through a Cloudflare Tunnel, which requires no inbound port forwarding.
+
+**Proxmox-level:** the Proxmox firewall is enabled on every VM network interface (`firewall=1` in each VM config).
+Each service's own README documents the specific ports it needs open.
+
+**LAN:** no firewall between hosts on `10.33.111.0/24`.
+Lab VMs can reach each other freely within the subnet.
+
 ## Public exposure
 
 `wg.arpatek.dev` is the only hostname currently exposed — a grey-cloud A record pointing at the home public IP for WireGuard.
