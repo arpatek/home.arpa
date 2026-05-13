@@ -4,10 +4,15 @@ Procedures for upgrading k3s and the cluster nodes.
 
 ## Currently installed
 
-| Component  | Version       |
-| ---------- | ------------- |
-| k3s        | v1.35.4+k3s1  |
-| Kubernetes | v1.35.4       |
+| Component    | Version      |
+| ------------ | ------------ |
+| k3s          | v1.35.4+k3s1 |
+| Kubernetes   | v1.35.4      |
+| cert-manager | v1.20.2      |
+
+v1.35.4 was the latest stable Kubernetes release at the time of cluster provisioning.
+cert-manager v1.20.2 was the latest stable release at the time of installation.
+Neither is a special pin — upgrade when a new minor version has been out for a few weeks and the changelog is clean.
 
 Check running versions:
 
@@ -73,6 +78,37 @@ Draining evicts all pods from the node gracefully before the upgrade restarts th
 Without draining, pods are killed abruptly mid-upgrade.
 The `--ignore-daemonsets` flag skips DaemonSet pods (like Traefik and Flannel) since those can't be moved.
 
+### Rollback
+
+k3s rollback is the same as upgrading — reinstall the previous version by pinning `INSTALL_K3S_VERSION`.
+
+**On the master:**
+
+```bash
+ssh arpatek@10.33.111.103
+export INSTALL_K3S_VERSION=v1.35.4+k3s1
+curl -sfL https://get.k3s.io | sudo -E sh -s - server \
+  --node-taint node-role.kubernetes.io/control-plane=:NoSchedule \
+  --tls-san prod-k3s-master-0.home.arpa \
+  --tls-san 10.33.111.103 \
+  --write-kubeconfig-mode 644
+```
+
+**On each worker:**
+
+```bash
+kubectl drain prod-k3s-worker-0.home.arpa --ignore-daemonsets --delete-emptydir-data
+ssh arpatek@10.33.111.104
+export INSTALL_K3S_VERSION=v1.35.4+k3s1
+export K3S_URL=https://10.33.111.103:6443
+export K3S_TOKEN=$(ssh arpatek@10.33.111.103 "sudo cat /var/lib/rancher/k3s/server/node-token")
+curl -sfL https://get.k3s.io | sudo -E sh -
+kubectl uncordon prod-k3s-worker-0.home.arpa
+```
+
+Kubernetes API compatibility means the workers will reconnect immediately once the master is back.
+etcd state is not affected by a k3s binary rollback — no data is lost.
+
 ### Automated upgrade with system-upgrade-controller
 
 k3s provides an official upgrade controller that handles rolling upgrades automatically.
@@ -98,6 +134,34 @@ Verify the node rejoins:
 ```bash
 kubectl get nodes
 ```
+
+## Upgrading cert-manager
+
+cert-manager is installed from the upstream release manifest.
+Check for new versions at <https://github.com/cert-manager/cert-manager/releases>.
+
+**Apply new CRDs first, then the controller:**
+
+```bash
+export CERT_MANAGER_VERSION=v1.21.0
+
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.crds.yaml
+
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${CERT_MANAGER_VERSION}/cert-manager.yaml
+```
+
+**Verify:**
+
+```bash
+kubectl get pods -n cert-manager
+# all three pods (controller, cainjector, webhook) should reach Running
+kubectl get certificates -A
+# wildcard cert should remain Ready
+```
+
+**Rollback:**
+Reapply the previous version's manifests using the same two commands with the old version pinned.
+CRDs from a newer version are generally backward-compatible with an older controller, but rolling back CRDs is not safe — only roll back the controller manifest unless the CRD schema itself changed.
 
 ## Version skew policy
 
