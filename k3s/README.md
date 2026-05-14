@@ -84,15 +84,26 @@ k3s pulls the updated image using the `gitea-registry` imagePullSecret and `imag
 Gitea is not a k3s workload — it runs on `prod-git-0` via Docker Compose.
 k3s exposes it publicly through a headless Service + Endpoints object pointing at `10.33.111.101:3000`, with Traefik routing `git.arpatek.dev` to that backend over TLS.
 
+### cloudflared
+
+Runs as a 2-replica Deployment in the `default` namespace.
+Each pod dials out to Cloudflare's edge and maintains a persistent encrypted tunnel — no inbound ports or firewall rules required.
+Public traffic for `arpatek.dev` arrives at Cloudflare, travels down the tunnel, and is forwarded to Traefik inside the cluster via `http://traefik.kube-system.svc.cluster.local:80`.
+
+The tunnel is named `arpatek-dev` (ID: `6e7e231c-1c15-4beb-a345-799852d72e62`).
+Tunnel credentials are stored as the `cloudflared-credentials` Secret in the `default` namespace — not committed to this repo.
+See [`manifests/cloudflared/README.md`](manifests/cloudflared/README.md) for setup instructions.
+
 ## Stack versions
 
-| Component   | Version           |
-| ----------- | ----------------- |
-| k3s         | v1.35.4+k3s1      |
-| Kubernetes  | v1.35.4           |
-| CNI         | Flannel (default)  |
-| Ingress     | Traefik (default)  |
-| cert-manager | v1.20.2          |
+| Component    | Version           |
+| ------------ | ----------------- |
+| k3s          | v1.35.4+k3s1      |
+| Kubernetes   | v1.35.4           |
+| CNI          | Flannel (default) |
+| Ingress      | Traefik (default) |
+| cert-manager | v1.20.2           |
+| cloudflared  | 2026.5.0          |
 
 ## Repository layout
 
@@ -116,6 +127,9 @@ k3s/
 │   ├── pihole/
 │   │   ├── ingress.yaml            # Traefik ingress for pi.arpatek.dev
 │   │   └── service.yaml            # headless Service + Endpoints → netrunner-rpi:443
+│   ├── cloudflared/
+│   │   ├── README.md               # tunnel setup and recovery instructions
+│   │   └── deployment.yaml         # ConfigMap + Deployment for cloudflared
 │   └── proxmox/
 │       ├── ingress.yaml            # Traefik ingress for pve.arpatek.dev
 │       └── service.yaml            # headless Service + Endpoints → devstem:8006
