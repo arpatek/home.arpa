@@ -13,7 +13,7 @@ Traffic path: `Cloudflare edge → tunnel → cloudflared pod → Traefik → ar
 | Tunnel ID | `6e7e231c-1c15-4beb-a345-799852d72e62` |
 | Hostname | `arpatek.dev` |
 | Backend | `http://traefik.kube-system.svc.cluster.local:80` |
-| Replicas | 2 |
+| Replicas | 2 (one connection per pod — survives pod restarts and rolling updates without downtime) |
 | Image | `cloudflare/cloudflared:2026.5.0` |
 
 ## Prerequisites
