@@ -1175,7 +1175,7 @@
     #
     # Allowed values are:
     #     A valid Pi-hole password hash
-    pwhash = "" ### CHANGED, default = ""
+    pwhash = ""
 
     # Pi-hole 2FA TOTP secret. When set to something different than an empty string, 2FA
     # authentication will be enforced for the API and the web interface. This setting is
