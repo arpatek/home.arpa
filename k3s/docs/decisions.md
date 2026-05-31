@@ -42,7 +42,7 @@ k3s's lower overhead (less RAM consumed by control plane components) leaves more
 **Alternatives considered.**
 
 _ISO installation._ Install Debian manually on each VM via the netinstall ISO.
-This is how the other lab VMs (prod-ipa-0, prod-git-0, prod-mon-0) were installed.
+This is how the other lab VMs (mikoshi, soulkiller, netwatch) were installed.
 Works, but requires interactive console sessions for each VM.
 
 **Why cloud-init template.**

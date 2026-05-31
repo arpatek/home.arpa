@@ -2,11 +2,11 @@
 
 ## Hosts
 
-### prod-k3s-master-0
+### erebus
 
 |                  |                                                       |
 | ---------------- | ----------------------------------------------------- |
-| Hardware         | Virtual Machine on Proxmox (devstem)                  |
+| Hardware         | Virtual Machine on Proxmox (blackwall)                  |
 | Machine Type     | q35                                                   |
 | Sockets          | 1                                                     |
 | Cores            | 2                                                     |
@@ -16,15 +16,15 @@
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
 | OS               | Debian 13.3 (Trixie)                                  |
 | IP               | 10.33.111.103                                         |
-| Hostname         | prod-k3s-master-0.home.arpa                           |
+| Hostname         | erebus.home.arpa                           |
 | Start on Boot    | Yes                                                   |
 | QEMU Guest Agent | Enabled                                               |
 
-### prod-k3s-worker-0
+### sandevistan
 
 |                  |                                                       |
 | ---------------- | ----------------------------------------------------- |
-| Hardware         | Virtual Machine on Proxmox (devstem)                  |
+| Hardware         | Virtual Machine on Proxmox (blackwall)                  |
 | Machine Type     | q35                                                   |
 | Sockets          | 1                                                     |
 | Cores            | 2                                                     |
@@ -34,15 +34,15 @@
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
 | OS               | Debian 13.3 (Trixie)                                  |
 | IP               | 10.33.111.104                                         |
-| Hostname         | prod-k3s-worker-0.home.arpa                           |
+| Hostname         | sandevistan.home.arpa                           |
 | Start on Boot    | Yes                                                   |
 | QEMU Guest Agent | Enabled                                               |
 
-### prod-k3s-worker-1
+### kerenzikov
 
 |                  |                                                       |
 | ---------------- | ----------------------------------------------------- |
-| Hardware         | Virtual Machine on Proxmox (devstem)                  |
+| Hardware         | Virtual Machine on Proxmox (blackwall)                  |
 | Machine Type     | q35                                                   |
 | Sockets          | 1                                                     |
 | Cores            | 2                                                     |
@@ -52,13 +52,13 @@
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
 | OS               | Debian 13.3 (Trixie)                                  |
 | IP               | 10.33.111.105                                         |
-| Hostname         | prod-k3s-worker-1.home.arpa                           |
+| Hostname         | kerenzikov.home.arpa                           |
 | Start on Boot    | Yes                                                   |
 | QEMU Guest Agent | Enabled                                               |
 
 ## Overview
 
-k3s cluster running on `devstem` (Proxmox).
+k3s cluster running on `blackwall` (Proxmox).
 k3s is a lightweight Kubernetes distribution — same API as full Kubernetes but packaged as a single binary with sensible defaults for resource-constrained environments.
 
 The master is tainted `control-plane:NoSchedule` — it runs only the Kubernetes control plane.
@@ -75,13 +75,13 @@ Try it: `curl arpatek.dev`
 Source code and pipeline configuration live in the `arpatek/arpatek.dev` repository on Gitea (`git.arpatek.dev`).
 That repo is its own project — this directory only contains the k3s manifests needed to run it.
 
-The CI pipeline runs on `prod-git-0` via act_runner.
+The CI pipeline runs on `soulkiller` via act_runner.
 Each push to `arpatek/arpatek.dev` triggers a build that packages the app into a container image and pushes it to the Gitea container registry at `git.arpatek.dev`.
 k3s pulls the updated image using the `gitea-registry` imagePullSecret and `imagePullPolicy: Always`.
 
 ### git.arpatek.dev
 
-Gitea is not a k3s workload — it runs on `prod-git-0` via Docker Compose.
+Gitea is not a k3s workload — it runs on `soulkiller` via Docker Compose.
 k3s exposes it publicly through a headless Service + Endpoints object pointing at `10.33.111.101:3000`, with Traefik routing `git.arpatek.dev` to that backend over TLS.
 
 ### cloudflared
@@ -120,19 +120,19 @@ k3s/
 │   │   └── wildcard-cert.yaml      # *.arpatek.dev wildcard certificate
 │   ├── gitea/
 │   │   ├── ingress.yaml            # Traefik ingress for git.arpatek.dev
-│   │   └── service.yaml            # headless Service + Endpoints → prod-git-0:3000
+│   │   └── service.yaml            # headless Service + Endpoints → soulkiller:3000
 │   ├── monitoring/
 │   │   ├── ingress.yaml            # Traefik ingress for gf.arpatek.dev + pm.arpatek.dev
-│   │   └── service.yaml            # headless Services + Endpoints → prod-mon-0:3000/9090
+│   │   └── service.yaml            # headless Services + Endpoints → netwatch:3000/9090
 │   ├── pihole/
 │   │   ├── ingress.yaml            # Traefik ingress for pi.arpatek.dev
-│   │   └── service.yaml            # headless Service + Endpoints → netrunner-rpi:443
+│   │   └── service.yaml            # headless Service + Endpoints → netrunner:443
 │   ├── cloudflared/
 │   │   ├── README.md               # tunnel setup and recovery instructions
 │   │   └── deployment.yaml         # ConfigMap + Deployment for cloudflared
 │   └── proxmox/
 │       ├── ingress.yaml            # Traefik ingress for pve.arpatek.dev
-│       └── service.yaml            # headless Service + Endpoints → devstem:8006
+│       └── service.yaml            # headless Service + Endpoints → blackwall:8006
 └── docs/
     ├── architecture.md             # control plane components, node roles, data flow
     ├── decisions.md                # k3s vs alternatives, cluster design choices
@@ -144,7 +144,7 @@ k3s/
 
 ### 1. Provision VMs
 
-Run [proxmox/provision-k3s.sh](../proxmox/provision-k3s.sh) on `devstem` to create and start the three VMs.
+Run [proxmox/provision-k3s.sh](../proxmox/provision-k3s.sh) on `blackwall` to create and start the three VMs.
 Wait ~60 seconds for cloud-init to finish, then SSH in as `sysadmin`.
 
 ### 2. Add sysadmin user and enroll in IPA
@@ -159,14 +159,14 @@ sudo passwd sysadmin
 sudo hostnamectl set-hostname <hostname>.home.arpa
 
 # Add hosts entries
-echo "10.33.111.100 prod-ipa-0.home.arpa prod-ipa-0" | sudo tee -a /etc/hosts
+echo "10.33.111.100 mikoshi.home.arpa mikoshi" | sudo tee -a /etc/hosts
 echo "<node-ip> <hostname>.home.arpa <hostname>" | sudo tee -a /etc/hosts
 
 # Enroll in IPA
 sudo apt install freeipa-client -y
 sudo ipa-client-install \
   --domain=home.arpa \
-  --server=prod-ipa-0.home.arpa \
+  --server=mikoshi.home.arpa \
   --realm=HOME.ARPA \
   --hostname=<hostname>.home.arpa \
   --principal admin \
@@ -180,7 +180,7 @@ ssh arpatek@10.33.111.103
 
 curl -sfL https://get.k3s.io | sudo sh -s - server \
   --node-taint node-role.kubernetes.io/control-plane=:NoSchedule \
-  --tls-san prod-k3s-master-0.home.arpa \
+  --tls-san erebus.home.arpa \
   --tls-san 10.33.111.103 \
   --write-kubeconfig-mode 644
 ```
@@ -204,8 +204,8 @@ curl -sfL https://get.k3s.io | sudo -E sh -
 ### 5. Label worker nodes
 
 ```bash
-kubectl label node prod-k3s-worker-0.home.arpa node-role.kubernetes.io/worker=worker
-kubectl label node prod-k3s-worker-1.home.arpa node-role.kubernetes.io/worker=worker
+kubectl label node sandevistan.home.arpa node-role.kubernetes.io/worker=worker
+kubectl label node kerenzikov.home.arpa node-role.kubernetes.io/worker=worker
 ```
 
 ### 6. Set up kubectl access
@@ -214,7 +214,7 @@ See [Cluster access](#cluster-access) below.
 
 ## Cluster access
 
-The cluster API server runs on `prod-k3s-master-0` at port 6443.
+The cluster API server runs on `erebus` at port 6443.
 `kubectl` access requires the kubeconfig from the master:
 
 ```bash
@@ -240,7 +240,7 @@ chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 ```bash
 kubectl get nodes
 NAME                          STATUS   ROLES           AGE   VERSION
-prod-k3s-master-0.home.arpa   Ready    control-plane   —     v1.35.4+k3s1
-prod-k3s-worker-0.home.arpa   Ready    worker          —     v1.35.4+k3s1
-prod-k3s-worker-1.home.arpa   Ready    worker          —     v1.35.4+k3s1
+erebus.home.arpa   Ready    control-plane   —     v1.35.4+k3s1
+sandevistan.home.arpa   Ready    worker          —     v1.35.4+k3s1
+kerenzikov.home.arpa   Ready    worker          —     v1.35.4+k3s1
 ```

@@ -11,7 +11,7 @@ Two agents in Compose, plus node_exporter as a native systemd service.
 - **Alloy** (container) — discovers running Docker containers, ships their stdout to Loki
 
 The agents run in their own Compose project at `/opt/monitoring-agents/`, separate from anything else on the host.
-On `prod-git-0` for example, this lives alongside `/opt/gitea/` but operates independently.
+On `soulkiller` for example, this lives alongside `/opt/gitea/` but operates independently.
 Restarting Gitea doesn't bounce the agents.
 
 ## Prerequisites
@@ -21,9 +21,9 @@ The host needs:
 - Debian 12+ or Ubuntu 22.04+ (any reasonably recent Debian-family distro)
 - Docker Engine and Compose plugin installed (see [../../server/README.md](../../server/README.md) section "Install Docker" if needed)
 - The non-root admin user in the `docker` group
-- DNS resolution for `prod-mon-0.home.arpa` working (the agents push logs there)
-- Outbound HTTP to `prod-mon-0.home.arpa:3100` (Loki) reachable
-- Inbound HTTP from `prod-mon-0.home.arpa` to `:9100` (node_exporter) and `:8080` (cAdvisor) reachable
+- DNS resolution for `netwatch.home.arpa` working (the agents push logs there)
+- Outbound HTTP to `netwatch.home.arpa:3100` (Loki) reachable
+- Inbound HTTP from `netwatch.home.arpa` to `:9100` (node_exporter) and `:8080` (cAdvisor) reachable
 
 A few utilities are useful for verification:
 
@@ -115,7 +115,7 @@ Each agent's logs need to be uniquely identifiable in Loki:
 ```bash
 sudo nvim /opt/monitoring-agents/alloy/config/config.alloy
 # Find the labels block and set "host" to the short hostname of this host
-# Example: "host" = "prod-git-0"
+# Example: "host" = "soulkiller"
 ```
 
 This is the one line that varies per host.
@@ -143,27 +143,27 @@ Add the new host to the `node` and `cadvisor` jobs:
 - job_name: "node"
   static_configs:
     - targets:
-        - "prod-mon-0.home.arpa:9100"
+        - "netwatch.home.arpa:9100"
         - "<new-host>.home.arpa:9100" # add this line
 
 - job_name: "cadvisor"
   static_configs:
     - targets:
-        - "prod-mon-0.home.arpa:8080"
+        - "netwatch.home.arpa:8080"
         - "<new-host>.home.arpa:8080" # add this line
 ```
 
-**On `prod-mon-0`:** copy the updated config and reload Prometheus.
+**On `netwatch`:** copy the updated config and reload Prometheus.
 
 **From the local repo clone:** copy the updated config to the host.
 
 ```bash
 cd <path-to-repo>/monitoring/server
 
-scp prometheus/prometheus.yml prod-mon-0.home.arpa:/tmp/
+scp prometheus/prometheus.yml netwatch.home.arpa:/tmp/
 ```
 
-**On `prod-mon-0`:** move the config into place and reload Prometheus.
+**On `netwatch`:** move the config into place and reload Prometheus.
 
 ```bash
 sudo mv /tmp/prometheus.yml /opt/monitoring/prometheus/config/
@@ -174,7 +174,7 @@ curl -X POST http://localhost:9090/-/reload
 
 ````
 
-Verify the new host shows as `UP` at `http://prod-mon-0.home.arpa:9090/targets`.
+Verify the new host shows as `UP` at `http://netwatch.home.arpa:9090/targets`.
 
 ## Verification
 
@@ -206,7 +206,7 @@ curl -s http://localhost:12345/-/ready
 # Should return: Alloy is ready.
 ```
 
-From `prod-mon-0`, verify the central server is scraping this host:
+From `netwatch`, verify the central server is scraping this host:
 
 ```bash
 curl -s http://localhost:9090/api/v1/targets | jq \
@@ -214,7 +214,7 @@ curl -s http://localhost:9090/api/v1/targets | jq \
 ```
 
 Logs should also be flowing into Loki.
-On `prod-mon-0`:
+On `netwatch`:
 
 ```bash
 curl -G -s 'http://localhost:3100/loki/api/v1/labels' | jq

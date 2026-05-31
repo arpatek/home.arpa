@@ -33,7 +33,7 @@ loki.source.docker "containers" {
 	targets    = discovery.relabel.containers.output
 	forward_to = [loki.write.local.receiver]
 	labels     = {
-		"host" = "prod-mon-0",
+		"host" = "netwatch",
 	}
 }
 

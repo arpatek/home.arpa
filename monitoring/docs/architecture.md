@@ -37,12 +37,12 @@ Runs on every host that has Docker.
 ## Topology
 
 The stack is hub-and-spoke.
-One central host (`prod-mon-0`) holds the storage and visualization layer.
+One central host (`netwatch`) holds the storage and visualization layer.
 Every other host runs lightweight agents that report into the central server.
 
 ```mermaid
 flowchart TB
-    subgraph MON["prod-mon-0 (10.33.111.102)"]
+    subgraph MON["netwatch (10.33.111.102)"]
         direction LR
         PROM[(Prometheus<br/>:9090)]
         LOKI[(Loki<br/>:3100)]
@@ -52,14 +52,14 @@ flowchart TB
         M_CAD[cAdvisor<br/>:8080]
     end
 
-    subgraph GIT["prod-git-0 (10.33.111.101)"]
+    subgraph GIT["soulkiller (10.33.111.101)"]
         direction LR
         G_ALLOY[Alloy Agent]
         G_NODE[node_exporter<br/>:9100]
         G_CAD[cAdvisor<br/>:8080]
     end
 
-    subgraph IPA["prod-ipa-0 (10.33.111.100)"]
+    subgraph IPA["mikoshi (10.33.111.100)"]
         direction LR
         I_ALLOY["Alloy Agent (systemd)"]
         I_NODE[node_exporter<br/>:9100]
@@ -114,11 +114,11 @@ Prometheus parses the response, stores the samples in its TSDB, and moves on.
 
 The scrape targets in this stack are:
 
-- `prod-mon-0.home.arpa:9100` — local node_exporter
-- `prod-mon-0.home.arpa:8080` — local cAdvisor
-- `prod-git-0.home.arpa:9100` — remote node_exporter
-- `prod-git-0.home.arpa:8080` — remote cAdvisor
-- `prod-ipa-0.home.arpa:9100` — remote node_exporter
+- `netwatch.home.arpa:9100` — local node_exporter
+- `netwatch.home.arpa:8080` — local cAdvisor
+- `soulkiller.home.arpa:9100` — remote node_exporter
+- `soulkiller.home.arpa:8080` — remote cAdvisor
+- `mikoshi.home.arpa:9100` — remote node_exporter
 
 The scrape interval and timeout are configured per job in `server/prometheus/prometheus.yml`.
 All current jobs use the global defaults.
@@ -126,13 +126,13 @@ All current jobs use the global defaults.
 ### Logs: push
 
 Alloy reads logs locally (from Docker container stdout files, or from journald) and pushes them to Loki over HTTP.
-The push endpoint is `http://prod-mon-0.home.arpa:3100/loki/api/v1/push`.
+The push endpoint is `http://netwatch.home.arpa:3100/loki/api/v1/push`.
 
 On Docker hosts, Alloy discovers running containers automatically and tails their stdout from `/var/lib/docker/containers/<id>/<id>-json.log`.
 On the RHEL host, Alloy reads from the systemd journal directly using its `loki.source.journal` component.
 
 Each pushed log line carries labels.
-The minimum label set is `host` (set per agent — `prod-mon-0`, `prod-git-0`, `prod-ipa-0`) and `service` or `unit` (set from container name or systemd unit).
+The minimum label set is `host` (set per agent — `netwatch`, `soulkiller`, `mikoshi`) and `service` or `unit` (set from container name or systemd unit).
 These labels are what Loki indexes; the log content itself is stored as a compressed chunk and searched at query time.
 
 ### Queries: Grafana to both backends
@@ -156,29 +156,29 @@ The stack uses two distinct hostname resolution paths.
 When Prometheus scrapes a remote host, or when Alloy on a remote host pushes to the central Loki, the request goes over the home.arpa network.
 The hostnames in those configs are FQDNs:
 
-- Prometheus scrape targets: `prod-git-0.home.arpa:9100`, `prod-ipa-0.home.arpa:9100`, etc.
-- Alloy push URLs from remote hosts: `http://prod-mon-0.home.arpa:3100/loki/api/v1/push`
+- Prometheus scrape targets: `soulkiller.home.arpa:9100`, `mikoshi.home.arpa:9100`, etc.
+- Alloy push URLs from remote hosts: `http://netwatch.home.arpa:3100/loki/api/v1/push`
 
 Resolution happens through the FreeIPA-managed BIND server at `10.33.111.100` (with Pi-hole at `10.33.111.141` as fallback).
 This is the same DNS path every other service in the lab uses.
 
 ### Internal traffic uses Compose service names
 
-Inside `prod-mon-0`'s Compose network, services talk to each other by name:
+Inside `netwatch`'s Compose network, services talk to each other by name:
 
 - Grafana queries Prometheus at `http://prometheus:9090`
 - Grafana queries Loki at `http://loki:3100`
-- Alloy on `prod-mon-0` pushes to local Loki at `http://loki:3100/loki/api/v1/push`
+- Alloy on `netwatch` pushes to local Loki at `http://loki:3100/loki/api/v1/push`
 
 Docker's embedded DNS handles these names.
 A container in the `monitoring` network can resolve `prometheus`, `loki`, `grafana`, etc., to other containers in the same network.
 This is faster than going through external DNS and doesn't depend on the home.arpa zone being healthy.
 
-The reason for the split is that internal service-to-service traffic shouldn't depend on external DNS — if BIND on `prod-ipa-0` ever fails, Grafana on `prod-mon-0` should still be able to query the local Prometheus.
+The reason for the split is that internal service-to-service traffic shouldn't depend on external DNS — if BIND on `mikoshi` ever fails, Grafana on `netwatch` should still be able to query the local Prometheus.
 
 ### Why the central server uses an FQDN for its own scrape target
 
-The Prometheus config on `prod-mon-0` scrapes its own local node_exporter at `prod-mon-0.home.arpa:9100`, not at `localhost:9100` or via Compose service names.
+The Prometheus config on `netwatch` scrapes its own local node_exporter at `netwatch.home.arpa:9100`, not at `localhost:9100` or via Compose service names.
 Reasoning: the scrape target labels in Prometheus end up in every metric.
 Using the FQDN means metrics from the central host's local exporters look identical to metrics from remote hosts — same `instance` label format, same dashboard variables work everywhere.
 Using `localhost` would create an asymmetry that would have to be papered over in dashboards.
@@ -187,7 +187,7 @@ Using `localhost` would create an asymmetry that would have to be papered over i
 
 The persistent state of the stack lives in bind-mounted directories on each host.
 
-### prod-mon-0
+### netwatch
 
 ```
 /opt/monitoring/
@@ -215,7 +215,7 @@ The agents on this host run as containers in the same Compose project as the sto
 Each component has a `config/` directory mounted read-only into its container, and a `data/` directory mounted read-write.
 Alloy is the exception — its only persistent state is a positions file (where it left off in each log source) and that lives inside the container's writable layer.
 
-### prod-git-0
+### soulkiller
 
 ```
 /opt/monitoring-agents/
@@ -233,7 +233,7 @@ Restarting Gitea (for an upgrade or config change) does not bounce the monitorin
 The `cadvisor/` directory exists from initial scaffolding but cAdvisor doesn't use a config file — it takes everything via command-line flags in the Compose file.
 The directory is harmless to keep and could be removed.
 
-### prod-ipa-0
+### mikoshi
 
 No `/opt/monitoring*` directory.
 Configs and binaries live in standard FHS paths:
@@ -256,9 +256,9 @@ How to reach the stack as an operator.
 
 | What                      | URL                                    |
 | ------------------------- | -------------------------------------- |
-| Grafana web UI            | `http://prod-mon-0.home.arpa:3000`     |
-| Prometheus web UI         | `http://prod-mon-0.home.arpa:9090`     |
-| Loki API (no UI)          | `http://prod-mon-0.home.arpa:3100`     |
+| Grafana web UI            | `http://netwatch.home.arpa:3000`     |
+| Prometheus web UI         | `http://netwatch.home.arpa:9090`     |
+| Loki API (no UI)          | `http://netwatch.home.arpa:3100`     |
 | Alloy debug UI (per host) | `http://<host>.home.arpa:12345`        |
 | node_exporter raw metrics | `http://<host>.home.arpa:9100/metrics` |
 | cAdvisor raw metrics      | `http://<host>.home.arpa:8080/metrics` |
@@ -267,15 +267,15 @@ For day-to-day operation, only Grafana matters — every other UI is for debuggi
 
 To read the logs of the stack itself:
 
-- On `prod-mon-0`: `docker compose logs -f` from `/opt/monitoring/`
-- On `prod-git-0`: `docker compose logs -f` from `/opt/monitoring-agents/`
-- On `prod-ipa-0`: `journalctl -u alloy -f` and `journalctl -u node_exporter -f`
+- On `netwatch`: `docker compose logs -f` from `/opt/monitoring/`
+- On `soulkiller`: `docker compose logs -f` from `/opt/monitoring-agents/`
+- On `mikoshi`: `journalctl -u alloy -f` and `journalctl -u node_exporter -f`
 
 To restart a service:
 
 - Containerized: `docker compose restart <service>` from the relevant compose directory
-- systemd: `systemctl restart alloy` or `systemctl restart node_exporter` on `prod-ipa-0`
+- systemd: `systemctl restart alloy` or `systemctl restart node_exporter` on `mikoshi`
 
-To verify Prometheus is scraping all targets, visit `http://prod-mon-0.home.arpa:9090/targets`.
+To verify Prometheus is scraping all targets, visit `http://netwatch.home.arpa:9090/targets`.
 Every target should show `UP` in green.
 Anything else is a connectivity, DNS, or firewall problem.

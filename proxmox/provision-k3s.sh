@@ -45,9 +45,9 @@ SSH_KEY="/root/.ssh/id_rsa.pub"
 
 # VM definitions: "VMID:NAME:IP"
 VMS=(
-  "103:prod-k3s-master-0:10.33.111.103"
-  "104:prod-k3s-worker-0:10.33.111.104"
-  "105:prod-k3s-worker-1:10.33.111.105"
+  "103:erebus:10.33.111.103"
+  "104:sandevistan:10.33.111.104"
+  "105:kerenzikov:10.33.111.105"
 )
 
 VM_MEMORY=4096

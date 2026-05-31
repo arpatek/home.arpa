@@ -17,7 +17,7 @@ For production, the tradeoffs of k3s versus full Kubernetes are covered in [deci
 
 ## Component overview
 
-### Control plane (prod-k3s-master-0)
+### Control plane (erebus)
 
 The master runs the Kubernetes control plane — the components that manage cluster state:
 
@@ -37,7 +37,7 @@ The master is tainted `control-plane:NoSchedule`, so the scheduler never places 
 If a pod crashes, the controller manager notices the replica count is wrong and creates a replacement.
 If a node goes offline, it marks its pods as failed and reschedules them.
 
-### Worker nodes (prod-k3s-worker-0, prod-k3s-worker-1)
+### Worker nodes (sandevistan, kerenzikov)
 
 Each worker runs two components:
 
@@ -69,7 +69,7 @@ Runs on the worker nodes with a DaemonSet, so it's active on both workers.
 
 ```mermaid
 flowchart TB
-    subgraph MASTER["prod-k3s-master-0 (10.33.111.103)"]
+    subgraph MASTER["erebus (10.33.111.103)"]
         API["API Server\n:6443"]
         ETCD[("etcd")]
         SCHED["Scheduler"]
@@ -79,13 +79,13 @@ flowchart TB
         API --- CM
     end
 
-    subgraph W0["prod-k3s-worker-0 (10.33.111.104)"]
+    subgraph W0["sandevistan (10.33.111.104)"]
         KL0["kubelet"]
         KP0["kube-proxy"]
         POD0["pods"]
     end
 
-    subgraph W1["prod-k3s-worker-1 (10.33.111.105)"]
+    subgraph W1["kerenzikov (10.33.111.105)"]
         KL1["kubelet"]
         KP1["kube-proxy"]
         POD1["pods"]
@@ -157,10 +157,10 @@ kubectl get nodes
 kubectl get pods -A              # all pods across all namespaces
 
 # Check what's running on a specific node
-kubectl get pods -A -o wide --field-selector spec.nodeName=prod-k3s-worker-0.home.arpa
+kubectl get pods -A -o wide --field-selector spec.nodeName=sandevistan.home.arpa
 
 # Verify master taint is still in place
-kubectl describe node prod-k3s-master-0.home.arpa | grep Taint
+kubectl describe node erebus.home.arpa | grep Taint
 
 # k3s service logs on the master
 ssh arpatek@10.33.111.103 "sudo journalctl -u k3s -f"

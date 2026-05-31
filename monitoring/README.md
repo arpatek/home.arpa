@@ -2,7 +2,7 @@
 
 |                  |                                                |
 | ---------------- | ---------------------------------------------- |
-| Hardware         | Virtual Machine on Proxmox (devstem)           |
+| Hardware         | Virtual Machine on Proxmox (blackwall)           |
 | Machine Type     | q35                                            |
 | Sockets          | 1                                              |
 | Cores            | 2                                              |
@@ -12,7 +12,7 @@
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled |
 | OS               | Debian 13.3 (Trixie)                           |
 | IP               | 10.33.111.102                                  |
-| Hostname         | prod-mon-0.home.arpa                           |
+| Hostname         | netwatch.home.arpa                           |
 | Start on Boot    | Yes                                            |
 | QEMU Guest Agent | Enabled                                        |
 
@@ -24,13 +24,13 @@ Prometheus handles metrics, Loki handles logs.
 Traces are not part of the stack today.
 
 The architecture is hub-and-spoke.
-The hub runs on `prod-mon-0` and holds the storage and visualization layer.
+The hub runs on `netwatch` and holds the storage and visualization layer.
 Every other host runs lightweight agents that push metrics and logs to the hub.
 The setup is single-tenant and monolithic, sized for tens of hosts and 90 days of retention.
 
 ## Architecture
 
-A single host (`prod-mon-0`) runs the storage and visualization layer:
+A single host (`netwatch`) runs the storage and visualization layer:
 
 - **Prometheus** — pulls metrics from agents on every host
 - **Loki** — receives logs pushed by agents on every host
@@ -53,7 +53,7 @@ Hosts are unaware of each other.
 
 ```
 monitoring/
-├── server/                     # central host (prod-mon-0)
+├── server/                     # central host (netwatch)
 │   ├── docker-compose.yml      # all stack services
 │   ├── prometheus/             # scrape config
 │   ├── loki/                   # log storage config
@@ -87,10 +87,10 @@ monitoring/
 
 | Host         | OS        | Role                      | Agents                                         |
 | ------------ | --------- | ------------------------- | ---------------------------------------------- |
-| `prod-mon-0` | Debian 13 | Central monitoring server | node_exporter, cAdvisor, Alloy (containerized) |
-| `prod-git-0` | Debian 13 | Gitea host                | node_exporter, cAdvisor, Alloy (containerized) |
-| `prod-ipa-0` | Rocky 9.7 | FreeIPA server            | node_exporter, Alloy (systemd)                 |
+| `netwatch` | Debian 13 | Central monitoring server | node_exporter, cAdvisor, Alloy (containerized) |
+| `soulkiller` | Debian 13 | Gitea host                | node_exporter, cAdvisor, Alloy (containerized) |
+| `mikoshi` | Rocky 9.7 | FreeIPA server            | node_exporter, Alloy (systemd)                 |
 
-Logs and metrics from all three hosts are queryable from the central Grafana instance at `http://prod-mon-0.home.arpa:3000`.
+Logs and metrics from all three hosts are queryable from the central Grafana instance at `http://netwatch.home.arpa:3000`.
 
 > Additional deployments and detailed architectural breakdowns will be documented in [docs/architecture.md](docs/architecture.md) as the fleet grows.

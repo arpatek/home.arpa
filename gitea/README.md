@@ -4,7 +4,7 @@
 
 |                  |                                                |
 | ---------------- | ---------------------------------------------- |
-| Hardware         | Virtual Machine on Proxmox (devstem)           |
+| Hardware         | Virtual Machine on Proxmox (blackwall)           |
 | Machine Type     | q35                                            |
 | Sockets          | 1                                              |
 | Cores            | 4                                              |
@@ -14,7 +14,7 @@
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled |
 | OS               | Debian 13.3 (Trixie)                           |
 | IP               | 10.33.111.101                                  |
-| Hostname         | prod-git-0.home.arpa                           |
+| Hostname         | soulkiller.home.arpa                           |
 | Start on Boot    | Yes                                            |
 | QEMU Guest Agent | Enabled                                        |
 
@@ -61,7 +61,7 @@ How to stand up the Gitea stack from scratch on a fresh Debian 13 host.
 Before starting, the host needs:
 
 - Debian 13 (Trixie) installed and reachable on the `home.arpa` network
-- DNS resolution working — `getent hosts prod-git-0.home.arpa` should return `10.33.111.101`
+- DNS resolution working — `getent hosts soulkiller.home.arpa` should return `10.33.111.101`
 - IPA client enrolled so SSH and sudo work for `arpatek`
 - Outbound internet access to pull Docker images
 
@@ -93,7 +93,7 @@ newgrp docker
 
 ### Deploy the stack
 
-Create the directory layout on `prod-git-0`:
+Create the directory layout on `soulkiller`:
 
 ```bash
 sudo mkdir -p /opt/gitea/{data,config,postgres,runner}
@@ -102,10 +102,10 @@ sudo mkdir -p /opt/gitea/{data,config,postgres,runner}
 Copy the configs from the local repo clone:
 
 ```bash
-scp gitea/docker-compose.yml prod-git-0.home.arpa:/tmp/
+scp gitea/docker-compose.yml soulkiller.home.arpa:/tmp/
 ```
 
-Move the file into place on `prod-git-0`:
+Move the file into place on `soulkiller`:
 
 ```bash
 sudo mv /tmp/docker-compose.yml /opt/gitea/
@@ -114,10 +114,10 @@ sudo mv /tmp/docker-compose.yml /opt/gitea/
 Create the `.env` file from the example:
 
 ```bash
-scp gitea/.env.example prod-git-0.home.arpa:/tmp/
+scp gitea/.env.example soulkiller.home.arpa:/tmp/
 ```
 
-On `prod-git-0`:
+On `soulkiller`:
 
 ```bash
 sudo mv /tmp/.env.example /opt/gitea/.env
@@ -137,7 +137,7 @@ sudo docker compose up -d db gitea
 
 ### First-run configuration
 
-Visit `http://prod-git-0.home.arpa:3000` in a browser.
+Visit `http://soulkiller.home.arpa:3000` in a browser.
 Gitea shows a one-time install wizard on the first run.
 The database settings are pre-populated from the environment variables — confirm them but do not change them.
 Set the admin user account.
@@ -147,7 +147,7 @@ After the wizard completes, generate a runner registration token:
 - Go to **Site Administration > Actions > Runners**
 - Click **Create new Runner** and copy the token
 
-Set the token in `/opt/gitea/.env` on `prod-git-0`:
+Set the token in `/opt/gitea/.env` on `soulkiller`:
 
 ```bash
 sudo vim /opt/gitea/.env   # set GITEA_RUNNER_TOKEN
@@ -180,7 +180,7 @@ docker compose logs runner --tail 20
 Verify Gitea is reachable and reports its version:
 
 ```bash
-curl -s http://prod-git-0.home.arpa:3000/api/v1/version | jq
+curl -s http://soulkiller.home.arpa:3000/api/v1/version | jq
 ```
 
 ## Operational notes

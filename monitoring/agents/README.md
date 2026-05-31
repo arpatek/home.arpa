@@ -11,15 +11,15 @@ Hosts that don't run Docker get the agents as native systemd services.
 
 [debian/](debian/) — containerized agents, deployed via Docker Compose.
 Applies to any Debian-family host (Debian, Ubuntu) running Docker.
-Currently used on `prod-git-0`.
+Currently used on `soulkiller`.
 
 [rhel/](rhel/) — native systemd agents, binaries installed under `/usr/local/bin/`.
 Applies to RHEL-family hosts (RHEL, Rocky Linux, AlmaLinux).
-Currently used on `prod-ipa-0`.
+Currently used on `mikoshi`.
 
 [rpi/](rpi/) — native systemd agents, ARM64 binaries, no Docker.
 Applies to Raspberry Pi OS (Debian-based, ARM64) hosts that don't run Docker.
-Currently used on `netrunner-rpi`.
+Currently used on `netrunner`.
 
 ## What each pattern includes
 
@@ -43,5 +43,5 @@ Follow the README in that subdirectory.
 The pattern works for any host of the matching family — there's nothing host-specific in the deployment procedure.
 
 The only thing that varies per-host is the `host` label value in the Alloy configuration.
-Each agent's logs need to be uniquely identifiable in Loki, so the label is set to the short hostname (e.g. `prod-git-0`, `prod-ipa-0`).
+Each agent's logs need to be uniquely identifiable in Loki, so the label is set to the short hostname (e.g. `soulkiller`, `mikoshi`).
 This is the only line in `config.alloy` that should differ between two hosts of the same OS family.

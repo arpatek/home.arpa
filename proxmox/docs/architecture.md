@@ -57,7 +57,7 @@ Physical NIC (nic0)
 
 When a VM's virtual NIC is attached to `vmbr0`, it behaves like a device plugged into the same switch as the physical host.
 The VM gets its own IP on `10.33.111.0/24` — either from Pi-hole DHCP or configured statically via cloud-init.
-The hypervisor host itself (`devstem`) also lives on `vmbr0` at `10.33.111.44`.
+The hypervisor host itself (`blackwall`) also lives on `vmbr0` at `10.33.111.44`.
 
 ## VM configuration
 
@@ -76,6 +76,6 @@ The configuration covers:
 
 ## Web UI
 
-The Proxmox web interface runs at `https://devstem.home.arpa:8006`.
+The Proxmox web interface runs at `https://blackwall.home.arpa:8006`.
 It provides VM lifecycle management, console access, resource monitoring, storage management, and backup scheduling.
 All operations available in the UI are also available via the `qm`, `pvesm`, and `pvesh` CLI tools.

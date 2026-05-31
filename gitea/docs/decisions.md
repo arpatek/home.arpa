@@ -65,13 +65,13 @@ act_runner, running on the same host network as the rest of the lab, can reach t
 
 **Decision to revisit.**
 
-If the lab needs parallel CI capacity that `prod-git-0` cannot provide, the scaling path is adding more registered runners, not replacing act_runner.
+If the lab needs parallel CI capacity that `soulkiller` cannot provide, the scaling path is adding more registered runners, not replacing act_runner.
 The architecture stays the same; only the runner count changes.
 
 ## Smaller decisions
 
-**"Personal mirror + CI playground," not primary VCS.** Codeberg is the primary VCS for this project and other personal repos. Gitea hosts mirrors for local availability and provides a CI target for act_runner experimentation. This framing was deliberate: it keeps the pressure off Gitea's uptime. If `prod-git-0` goes down, no work is lost because Codeberg is the source of truth.
+**"Personal mirror + CI playground," not primary VCS.** Codeberg is the primary VCS for this project and other personal repos. Gitea hosts mirrors for local availability and provides a CI target for act_runner experimentation. This framing was deliberate: it keeps the pressure off Gitea's uptime. If `soulkiller` goes down, no work is lost because Codeberg is the source of truth.
 
-**Docker Compose over bare Gitea binary.** Gitea ships as a single static binary and can run under systemd without Docker. The decision to use Docker Compose matches the rest of the lab: other services on `prod-git-0` already run as Compose stacks, so Gitea fits the existing operational model. Same commands, same log access, same mental model.
+**Docker Compose over bare Gitea binary.** Gitea ships as a single static binary and can run under systemd without Docker. The decision to use Docker Compose matches the rest of the lab: other services on `soulkiller` already run as Compose stacks, so Gitea fits the existing operational model. Same commands, same log access, same mental model.
 
 **Version pinning.** The `:latest` tags currently in `docker-compose.yml` are a known anti-pattern. They will be replaced with explicit version pins alongside the CVE-2026-27780 patch. The pin rationale and upgrade procedures are documented in `docs/upgrading.md`.

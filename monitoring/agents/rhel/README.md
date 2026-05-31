@@ -20,9 +20,9 @@ The host needs:
 
 - RHEL 9, Rocky Linux 9, AlmaLinux 9, or compatible
 - The non-root admin user (in this lab, IPA-managed users) with sudo access
-- DNS resolution for `prod-mon-0.home.arpa` working
-- Outbound HTTP to `prod-mon-0.home.arpa:3100` (Loki) reachable
-- Inbound HTTP from `prod-mon-0.home.arpa` to `:9100` (node_exporter) and `:12345` (Alloy debug UI) reachable
+- DNS resolution for `netwatch.home.arpa` working
+- Outbound HTTP to `netwatch.home.arpa:3100` (Loki) reachable
+- Inbound HTTP from `netwatch.home.arpa` to `:9100` (node_exporter) and `:12345` (Alloy debug UI) reachable
 
 A few utilities are useful for verification:
 
@@ -149,7 +149,7 @@ Each agent's logs need to be uniquely identifiable in Loki:
 ```bash
 sudo vim /etc/alloy/config.alloy
 # Find the labels block and set "host" to the short hostname of this host
-# Example: "host" = "prod-ipa-0"
+# Example: "host" = "mikoshi"
 ```
 
 This is the one line that varies per host.
@@ -209,7 +209,7 @@ Add the new host to the `node` job (no cAdvisor on RHEL hosts):
 - job_name: "node"
   static_configs:
     - targets:
-        - "prod-mon-0.home.arpa:9100"
+        - "netwatch.home.arpa:9100"
         - "<new-host>.home.arpa:9100" # add this line
 ```
 
@@ -218,10 +218,10 @@ Add the new host to the `node` job (no cAdvisor on RHEL hosts):
 ```bash
 cd <path-to-repo>/monitoring/server
 
-scp prometheus/prometheus.yml prod-mon-0.home.arpa:/tmp/
+scp prometheus/prometheus.yml netwatch.home.arpa:/tmp/
 ```
 
-**On `prod-mon-0`:** move the config into place and reload Prometheus.
+**On `netwatch`:** move the config into place and reload Prometheus.
 
 ```bash
 sudo mv /tmp/prometheus.yml /opt/monitoring/prometheus/config/
@@ -230,7 +230,7 @@ sudo mv /tmp/prometheus.yml /opt/monitoring/prometheus/config/
 curl -X POST http://localhost:9090/-/reload
 ```
 
-Verify the new host shows as `UP` at `http://prod-mon-0.home.arpa:9090/targets`.
+Verify the new host shows as `UP` at `http://netwatch.home.arpa:9090/targets`.
 
 ## Verification
 
@@ -254,7 +254,7 @@ curl -s http://localhost:12345/-/ready
 # Should return: Alloy is ready.
 ```
 
-From `prod-mon-0`, verify the central server is scraping this host:
+From `netwatch`, verify the central server is scraping this host:
 
 ```bash
 curl -s http://localhost:9090/api/v1/targets | jq \

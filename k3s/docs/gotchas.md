@@ -98,7 +98,7 @@ The URL requires the architecture to be specified explicitly — it does not aut
 ## Reverse proxying services with absolute hostname redirects
 
 **Symptom.**
-Navigating to `pi.arpatek.dev` or a similar subdomain through the Traefik ingress redirects the browser to the backend's own hostname (e.g. `netrunner-rpi.home.arpa/admin/`), bypassing the proxy entirely.
+Navigating to `pi.arpatek.dev` or a similar subdomain through the Traefik ingress redirects the browser to the backend's own hostname (e.g. `netrunner.home.arpa/admin/`), bypassing the proxy entirely.
 
 **Cause.**
 Some services (Pi-hole, and others running lighttpd or Apache) issue absolute redirects using their configured `ServerName` rather than the `Host` header from the incoming request.
@@ -117,7 +117,7 @@ metadata:
 spec:
   headers:
     customRequestHeaders:
-      Host: "netrunner-rpi.home.arpa"
+      Host: "netrunner.home.arpa"
 ```
 
 Reference both middlewares in the ingress annotation:
@@ -138,15 +138,15 @@ Navigating to `ipa.arpatek.dev/ipa/ui/` shows a blank page with no login form.
 The URL is correct but nothing renders.
 
 **Cause.**
-FreeIPA's security model is tightly coupled to its configured server hostname (`prod-ipa-0.home.arpa`).
-Even with the Host header overridden at the Traefik level, session cookies are set with `Domain: prod-ipa-0.home.arpa` and are not sent by the browser on subsequent requests to `ipa.arpatek.dev`.
+FreeIPA's security model is tightly coupled to its configured server hostname (`mikoshi.home.arpa`).
+Even with the Host header overridden at the Traefik level, session cookies are set with `Domain: mikoshi.home.arpa` and are not sent by the browser on subsequent requests to `ipa.arpatek.dev`.
 CSRF protections also check the `Referer` header against the canonical hostname.
 The result is that the SPA loads but all API calls fail silently, leaving a blank page.
 
 **Fix.**
 Do not reverse proxy FreeIPA behind a different hostname.
-Access the web UI directly at `https://prod-ipa-0.home.arpa/ipa/ui/`, which is reachable on the LAN and via WireGuard.
+Access the web UI directly at `https://mikoshi.home.arpa/ipa/ui/`, which is reachable on the LAN and via WireGuard.
 
 **Broken assumption.**
 I assumed overriding the Host header would be sufficient to make the proxy transparent.
-FreeIPA's authentication and session management are built around a single canonical hostname in ways that go beyond the Host header — cookie domains, CSRF tokens, and Kerberos service principals are all tied to `prod-ipa-0.home.arpa`.
+FreeIPA's authentication and session management are built around a single canonical hostname in ways that go beyond the Host header — cookie domains, CSRF tokens, and Kerberos service principals are all tied to `mikoshi.home.arpa`.

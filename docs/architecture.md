@@ -7,7 +7,7 @@ For issues encountered during builds, see each service's `gotchas.md`.
 
 ## Lab overview
 
-A single Proxmox VE host (`devstem`, `10.33.111.44`) runs all virtual machines.
+A single Proxmox VE host (`blackwall`, `10.33.111.44`) runs all virtual machines.
 There is no cluster, no HA, and no live migration.
 This is a single-node homelab.
 
@@ -15,14 +15,14 @@ This is a single-node homelab.
 
 | Host | IP | OS | Role |
 | ---- | -- | -- | ---- |
-| `devstem` | `10.33.111.44` | Proxmox VE 9.1.9 | Hypervisor |
-| `prod-ipa-0` | `10.33.111.100` | Rocky Linux 9.7 | Identity (FreeIPA) |
-| `prod-git-0` | `10.33.111.101` | Debian 13.3 | Git + CI (Gitea) |
-| `prod-mon-0` | `10.33.111.102` | Debian 13.3 | Observability (PLG) |
-| `prod-k3s-master-0` | `10.33.111.103` | Debian 13.3 | k3s control plane |
-| `prod-k3s-worker-0` | `10.33.111.104` | Debian 13.3 | k3s worker |
-| `prod-k3s-worker-1` | `10.33.111.105` | Debian 13.3 | k3s worker |
-| `netrunner-rpi` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN + NAS |
+| `blackwall` | `10.33.111.44` | Proxmox VE 9.1.9 | Hypervisor |
+| `mikoshi` | `10.33.111.100` | Rocky Linux 9.7 | Identity (FreeIPA) |
+| `soulkiller` | `10.33.111.101` | Debian 13.3 | Git + CI (Gitea) |
+| `netwatch` | `10.33.111.102` | Debian 13.3 | Observability (PLG) |
+| `erebus` | `10.33.111.103` | Debian 13.3 | k3s control plane |
+| `sandevistan` | `10.33.111.104` | Debian 13.3 | k3s worker |
+| `kerenzikov` | `10.33.111.105` | Debian 13.3 | k3s worker |
+| `netrunner` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN + NAS |
 
 ## Services
 
@@ -41,7 +41,7 @@ Hosts the `arpatek/arpatek.dev` repository.
 act_runner executes Gitea Actions pipelines and pushes built container images to `git.arpatek.dev`.
 
 **Monitoring** — PLG observability stack (Prometheus, Loki, Grafana).
-Hub-and-spoke: `prod-mon-0` holds storage and visualization; all other hosts run lightweight agents.
+Hub-and-spoke: `netwatch` holds storage and visualization; all other hosts run lightweight agents.
 Prometheus scrapes metrics; Loki receives logs; Grafana renders both.
 
 **k3s** — Kubernetes cluster running public workloads.
@@ -50,27 +50,27 @@ Traefik is the ingress controller.
 cert-manager issues TLS certificates from Let's Encrypt via Cloudflare DNS-01.
 Current workloads: `arpatek.dev` (FastAPI personal site) and a Traefik proxy for `git.arpatek.dev`.
 
-**WireGuard** — VPN server on `netrunner-rpi`.
+**WireGuard** — VPN server on `netrunner`.
 Provides remote access into the `10.33.111.0/24` network from anywhere.
 Connected clients use Pi-hole for DNS, matching LAN behavior.
 
-**NAS** — Samba share on `netrunner-rpi`, served from `/srv/nas`.
-Mounted on LAN clients via CIFS at `//netrunner-rpi.home.arpa/NAS`.
+**NAS** — Samba share on `netrunner`, served from `/srv/nas`.
+Mounted on LAN clients via CIFS at `//netrunner.home.arpa/NAS`.
 
 ## Service dependencies
 
 ```
 arpatek.dev (k3s)
-  ├── Gitea registry (prod-git-0) — image source for the deployment
+  ├── Gitea registry (soulkiller) — image source for the deployment
   └── cert-manager → Let's Encrypt → Cloudflare DNS-01
 
 All VMs
-  ├── FreeIPA (prod-ipa-0) — SSH auth, sudo, DNS for home.arpa
-  └── Pi-hole (netrunner-rpi) — upstream DNS resolver, DHCP
+  ├── FreeIPA (mikoshi) — SSH auth, sudo, DNS for home.arpa
+  └── Pi-hole (netrunner) — upstream DNS resolver, DHCP
 
-Monitoring (prod-mon-0)
+Monitoring (netwatch)
   └── All hosts — Prometheus scrapes metrics, Loki receives logs
-  └── netrunner-rpi — node_exporter (:9100) + Alloy (journald → Loki)
+  └── netrunner — node_exporter (:9100) + Alloy (journald → Loki)
 ```
 
 ## Diagram
@@ -80,22 +80,22 @@ flowchart TB
     Internet -->|arpatek.dev / git.arpatek.dev| Cloudflare
     Cloudflare -->|HTTPS| TRAEFIK
 
-    subgraph DEVSTEM["devstem — Proxmox (10.33.111.44)"]
+    subgraph DEVSTEM["blackwall — Proxmox (10.33.111.44)"]
         subgraph K3S["k3s cluster (10.33.111.103–105)"]
             TRAEFIK[Traefik ingress]
             ARPATEK[arpatek.dev pod]
             TRAEFIK -->|arpatek.dev| ARPATEK
             TRAEFIK -->|git.arpatek.dev| GIT_SVC[headless Service]
         end
-        GIT[prod-git-0\nGitea + act_runner]
-        IPA[prod-ipa-0\nFreeIPA]
-        MON[prod-mon-0\nPrometheus + Loki + Grafana]
+        GIT[soulkiller\nGitea + act_runner]
+        IPA[mikoshi\nFreeIPA]
+        MON[netwatch\nPrometheus + Loki + Grafana]
 
         GIT_SVC -->|proxy| GIT
         GIT -->|image push| ARPATEK
     end
 
-    RPI[netrunner-rpi\nPi-hole + WireGuard + NAS]
+    RPI[netrunner\nPi-hole + WireGuard + NAS]
 
     K3S -.->|auth + DNS| IPA
     GIT -.->|auth + DNS| IPA
@@ -130,9 +130,9 @@ Docker named volumes are not used — bind mounts keep data inspectable and back
 
 | Host | Path | Contents |
 | ---- | ---- | -------- |
-| `prod-ipa-0` | managed by FreeIPA packages | LDAP, Kerberos DB, DNS zone data |
-| `prod-git-0` | `/opt/gitea/{data,config,postgres,runner}` | repositories, CI artifacts, PostgreSQL data |
-| `prod-mon-0` | `/opt/monitoring/{prometheus,loki,grafana}` | metrics TSDB, log chunks, dashboards |
-| `netrunner-rpi` | `/etc/pihole/`, `/etc/wireguard/` | DNS config, VPN keys and peer config |
-| `netrunner-rpi` | `/srv/nas` | Samba NAS share |
-| `netrunner-rpi` | `/etc/alloy/`, `/usr/local/bin/node_exporter` | monitoring agent configs and binaries |
+| `mikoshi` | managed by FreeIPA packages | LDAP, Kerberos DB, DNS zone data |
+| `soulkiller` | `/opt/gitea/{data,config,postgres,runner}` | repositories, CI artifacts, PostgreSQL data |
+| `netwatch` | `/opt/monitoring/{prometheus,loki,grafana}` | metrics TSDB, log chunks, dashboards |
+| `netrunner` | `/etc/pihole/`, `/etc/wireguard/` | DNS config, VPN keys and peer config |
+| `netrunner` | `/srv/nas` | Samba NAS share |
+| `netrunner` | `/etc/alloy/`, `/usr/local/bin/node_exporter` | monitoring agent configs and binaries |

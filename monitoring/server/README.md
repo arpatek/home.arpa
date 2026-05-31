@@ -1,4 +1,4 @@
-# Server (prod-mon-0)
+# Server (netwatch)
 
 ## Overview
 
@@ -6,14 +6,14 @@ The central monitoring server.
 Runs the storage and visualization layer (Prometheus, Loki, Grafana) plus the local agents (cAdvisor, Alloy in Compose; node_exporter as a native systemd service).
 
 For architectural context, see [../README.md](../README.md) and [../docs/architecture.md](../docs/architecture.md).
-This README is the operational guide for standing up `prod-mon-0` from a fresh Debian install.
+This README is the operational guide for standing up `netwatch` from a fresh Debian install.
 
 ## Prerequisites
 
 Before starting, the host needs:
 
 - Debian 13 (Trixie) installed and reachable on the `home.arpa` network
-- DNS resolution working — `getent hosts prod-mon-0.home.arpa` should return `10.33.111.102`
+- DNS resolution working — `getent hosts netwatch.home.arpa` should return `10.33.111.102`
 - The non-root admin user (in this lab, `arpatek`) configured with sudo access
 - Outbound internet access to fetch Docker, the node_exporter binary, and Docker images
 
@@ -40,13 +40,13 @@ Native node_exporter first (runs at the host level), then Docker, then the Compo
 
 ### 1. Install node_exporter natively
 
-**On `prod-mon-0`:** create the dedicated service user.
+**On `netwatch`:** create the dedicated service user.
 
 ```bash
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin node_exporter
 ```
 
-**On `prod-mon-0`:** download and install the binary.
+**On `netwatch`:** download and install the binary.
 Pin to v1.11.1 (matches the version used across the fleet):
 
 ```bash
@@ -68,10 +68,10 @@ Replace `<path-to-repo>` below with wherever you have this repo cloned.
 ```bash
 cd <path-to-repo>/monitoring/server
 
-scp node_exporter.service prod-mon-0.home.arpa:/tmp/
+scp node_exporter.service netwatch.home.arpa:/tmp/
 ```
 
-**On `prod-mon-0`:** install the unit file and start the service.
+**On `netwatch`:** install the unit file and start the service.
 
 ```bash
 sudo mv /tmp/node_exporter.service /etc/systemd/system/node_exporter.service
@@ -134,7 +134,7 @@ docker compose version
 
 ### 3. Deploy the Compose stack
 
-**On `prod-mon-0`:** create the stack directory.
+**On `netwatch`:** create the stack directory.
 
 ```bash
 sudo mkdir -p /opt/monitoring
@@ -150,14 +150,14 @@ Replace `<path-to-repo>` below with wherever you have this repo cloned.
 ```bash
 cd <path-to-repo>/monitoring/server
 
-scp docker-compose.yml prod-mon-0.home.arpa:/tmp/
-scp prometheus/prometheus.yml prod-mon-0.home.arpa:/tmp/
-scp loki/loki.yml prod-mon-0.home.arpa:/tmp/
-scp alloy/config.alloy prod-mon-0.home.arpa:/tmp/
-scp -r grafana/provisioning prod-mon-0.home.arpa:/tmp/
+scp docker-compose.yml netwatch.home.arpa:/tmp/
+scp prometheus/prometheus.yml netwatch.home.arpa:/tmp/
+scp loki/loki.yml netwatch.home.arpa:/tmp/
+scp alloy/config.alloy netwatch.home.arpa:/tmp/
+scp -r grafana/provisioning netwatch.home.arpa:/tmp/
 ```
 
-**On `prod-mon-0`:** create the bind-mount directory layout and move the configs into place.
+**On `netwatch`:** create the bind-mount directory layout and move the configs into place.
 
 ```bash
 # Create config and data directories for each component
@@ -175,7 +175,7 @@ sudo mv /tmp/provisioning/* /opt/monitoring/grafana/config/provisioning/
 sudo rmdir /tmp/provisioning
 ```
 
-**On `prod-mon-0`:** set the data directory ownership.
+**On `netwatch`:** set the data directory ownership.
 Each container runs as a specific UID and needs write access to its data directory.
 
 ```bash
@@ -192,10 +192,10 @@ sudo chown -R 472:472 /opt/monitoring/grafana/data
 **From the local repo clone:** copy the env example to the host.
 
 ```bash
-scp .env.example prod-mon-0.home.arpa:/tmp/
+scp .env.example netwatch.home.arpa:/tmp/
 ```
 
-**On `prod-mon-0`:** create the actual `.env` file.
+**On `netwatch`:** create the actual `.env` file.
 
 ```bash
 sudo mv /tmp/.env.example /opt/monitoring/.env
@@ -203,7 +203,7 @@ sudo chmod 600 /opt/monitoring/.env
 sudo nvim /opt/monitoring/.env  # set GRAFANA_ADMIN_USER and GRAFANA_ADMIN_PASSWORD
 ```
 
-**On `prod-mon-0`:** bring up the stack.
+**On `netwatch`:** bring up the stack.
 
 ```bash
 cd /opt/monitoring
@@ -230,7 +230,7 @@ curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job,
 ```
 
 Every target should show `health: "up"`.
-Or visit `http://prod-mon-0.home.arpa:9090/targets` in a browser for the same view.
+Or visit `http://netwatch.home.arpa:9090/targets` in a browser for the same view.
 
 Check Loki is ready and receiving:
 
@@ -248,7 +248,7 @@ Check Grafana is up and dashboards are provisioned:
 curl -s http://localhost:3000/api/health
 ```
 
-Then visit `http://prod-mon-0.home.arpa:3000` in a browser.
+Then visit `http://netwatch.home.arpa:3000` in a browser.
 Log in with the credentials from `.env`.
 Navigate to Dashboards — both `Node Exporter Full` and `cAdvisor Exporter` should be present.
 

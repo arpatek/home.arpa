@@ -60,11 +60,11 @@ services:
     image: prom/prometheus:v3.11.3 # change version here
 ```
 
-Apply on `prod-mon-0`:
+Apply on `netwatch`:
 
 ```bash
 # scp the updated docker-compose.yml using the same pattern as in
-# server/README.md, then on prod-mon-0:
+# server/README.md, then on netwatch:
 
 cd /opt/monitoring
 sudo docker compose pull prometheus
@@ -195,7 +195,7 @@ sudo docker compose up -d grafana
 # Grafana health endpoint
 curl -s http://localhost:3000/api/health | jq
 
-# Login via browser at http://prod-mon-0.home.arpa:3000
+# Login via browser at http://netwatch.home.arpa:3000
 
 # Verify dashboards still load and queries return data
 # Check both Node Exporter Full and cAdvisor Exporter dashboards
@@ -230,7 +230,7 @@ Pay attention to:
 - **Component renames or removals** — Alloy occasionally renames components between minor versions. The release notes call these out as breaking changes.
 - **OpenTelemetry Collector dependency updates** — Alloy bundles a version of the OTel Collector. Upstream OTel changes can affect Alloy's behavior even if the Alloy syntax doesn't change.
 
-The Alloy on `prod-mon-0` and `prod-git-0` runs as a container. Edit the relevant compose file:
+The Alloy on `netwatch` and `soulkiller` runs as a container. Edit the relevant compose file:
 
 ```yaml
 services:
@@ -241,16 +241,16 @@ services:
 Apply:
 
 ```bash
-# On the host (prod-mon-0 or prod-git-0)
-cd /opt/monitoring  # or /opt/monitoring-agents/ on prod-git-0
+# On the host (netwatch or soulkiller)
+cd /opt/monitoring  # or /opt/monitoring-agents/ on soulkiller
 sudo docker compose pull alloy
 sudo docker compose up -d alloy
 ```
 
-The Alloy on `prod-ipa-0` is a native systemd service.
+The Alloy on `mikoshi` is a native systemd service.
 The upgrade is different: download the new binary, replace the old one, restart the service.
 
-**On `prod-ipa-0`:**
+**On `mikoshi`:**
 
 ```bash
 # Download new version
@@ -282,7 +282,7 @@ systemctl status alloy
 curl -s http://localhost:12345/-/ready
 
 # Check that logs are flowing into Loki
-# (run this on prod-mon-0)
+# (run this on netwatch)
 curl -G -s 'http://localhost:3100/loki/api/v1/labels' | jq
 # Should still list all hosts
 
@@ -355,7 +355,7 @@ node_exporter has been API-stable for years; upgrades are typically uneventful.
 
 **Upgrade procedure.**
 
-node_exporter is installed as a native binary on every host, including `prod-mon-0`, `prod-git-0`, and `prod-ipa-0`.
+node_exporter is installed as a native binary on every host, including `netwatch`, `soulkiller`, and `mikoshi`.
 The procedure is the same on all of them, with one wrinkle on RHEL hosts (SELinux context).
 
 Find the new version at <https://github.com/prometheus/node_exporter/releases>.
@@ -417,7 +417,7 @@ For a homelab on a private network, security CVEs are lower-priority than for in
 
 ### Upgrading the host OS
 
-When `prod-mon-0`, `prod-git-0`, or `prod-ipa-0` get a major OS upgrade (e.g. Debian 13 → 14, Rocky 9 → 10), the monitoring stack mostly doesn't care.
+When `netwatch`, `soulkiller`, or `mikoshi` get a major OS upgrade (e.g. Debian 13 → 14, Rocky 9 → 10), the monitoring stack mostly doesn't care.
 The agents are statically linked binaries or containerized.
 The exception is Docker on the Debian hosts: Docker's package may upgrade as part of a distro upgrade, which can pull in a new containerd version, which (rarely) affects cAdvisor.
 If anything monitoring-related breaks after a host OS upgrade, cAdvisor is the most likely suspect.

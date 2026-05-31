@@ -4,7 +4,7 @@
 
 |                  |                                                |
 | ---------------- | ---------------------------------------------- |
-| Hardware         | Virtual Machine on Proxmox (devstem)           |
+| Hardware         | Virtual Machine on Proxmox (blackwall)           |
 | Machine Type     | q35                                            |
 | Sockets          | 1                                              |
 | Cores            | 2                                              |
@@ -14,7 +14,7 @@
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled |
 | OS               | Rocky Linux 9.7 (Blue Onyx)                    |
 | IP               | 10.33.111.100                                  |
-| Hostname         | prod-ipa-0.home.arpa                           |
+| Hostname         | mikoshi.home.arpa                           |
 | Start on Boot    | Yes                                            |
 | QEMU Guest Agent | Enabled                                        |
 
@@ -38,8 +38,8 @@ ipa/
 ├── default.conf                # IPA framework default configuration
 ├── firewall-rules.txt          # firewall-cmd zone state dump
 ├── krb5.conf                   # Kerberos realm configuration (client-side, all enrolled hosts)
-├── sssd.conf                   # SSSD configuration (server-side, prod-ipa-0)
-├── sssd.conf.client            # SSSD configuration (client-side reference, prod-mon-0)
+├── sssd.conf                   # SSSD configuration (server-side, mikoshi)
+├── sssd.conf.client            # SSSD configuration (client-side reference, netwatch)
 └── docs/
     ├── architecture.md         # FreeIPA component breakdown and authentication flow
     ├── decisions.md            # design choices and rationale
@@ -52,7 +52,7 @@ ipa/
 ### Prerequisites
 
 ```bash
-sudo hostnamectl set-hostname prod-ipa-0.home.arpa
+sudo hostnamectl set-hostname mikoshi.home.arpa
 sudo vim /etc/hosts  # add hostname entry
 sudo dnf update -y
 ```
@@ -124,7 +124,7 @@ RHEL/Rocky:
 
 ```bash
 sudo dnf install freeipa-client -y
-sudo ipa-client-install --domain=home.arpa --server=prod-ipa-0.home.arpa \
+sudo ipa-client-install --domain=home.arpa --server=mikoshi.home.arpa \
   --realm=HOME.ARPA --mkhomedir --hostname=<hostname>.home.arpa
 ```
 
@@ -132,7 +132,7 @@ Debian/Ubuntu:
 
 ```bash
 sudo apt install freeipa-client -y
-sudo ipa-client-install --domain=home.arpa --server=prod-ipa-0.home.arpa \
+sudo ipa-client-install --domain=home.arpa --server=mikoshi.home.arpa \
   --realm=HOME.ARPA --mkhomedir --hostname=<hostname>.home.arpa
 ```
 
@@ -149,16 +149,16 @@ ipa dnsrecord-add 111.33.10.in-addr.arpa <last-octet> --ptr-rec <hostname>.home.
 | ----------------- | ---------------------- |
 | Realm             | `HOME.ARPA`            |
 | Domain            | `home.arpa`            |
-| IPA Master        | `prod-ipa-0.home.arpa` |
-| CA Server         | `prod-ipa-0.home.arpa` |
-| CA Renewal Master | `prod-ipa-0.home.arpa` |
+| IPA Master        | `mikoshi.home.arpa` |
+| CA Server         | `mikoshi.home.arpa` |
+| CA Renewal Master | `mikoshi.home.arpa` |
 | Default Shell     | `/bin/bash`            |
 | Default Auth      | password               |
 
 ## DNS
 
 FreeIPA's integrated BIND serves as the primary DNS authority for the `home.arpa` domain.
-Enrolled clients use `prod-ipa-0` (`10.33.111.100`) as their primary DNS server.
+Enrolled clients use `mikoshi` (`10.33.111.100`) as their primary DNS server.
 Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstream resolution.
 
 ### Forward zone
@@ -166,7 +166,7 @@ Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstre
 | Setting          | Value                            |
 | ---------------- | -------------------------------- |
 | Zone             | `home.arpa.`                     |
-| Authoritative NS | `prod-ipa-0.home.arpa.`          |
+| Authoritative NS | `mikoshi.home.arpa.`          |
 | Dynamic Update   | Enabled (Kerberos authenticated) |
 | Allow Query      | any                              |
 | Allow Transfer   | none                             |
@@ -176,7 +176,7 @@ Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstre
 | Setting          | Value                        |
 | ---------------- | ---------------------------- |
 | Zone             | `111.33.10.in-addr.arpa.`    |
-| Authoritative NS | `prod-ipa-0.home.arpa.`      |
+| Authoritative NS | `mikoshi.home.arpa.`      |
 | Dynamic Update   | Enabled (Kerberos subdomain) |
 | Allow Query      | any                          |
 | Allow Transfer   | none                         |
@@ -217,14 +217,14 @@ SSSD manages client-side identity resolution and caching on enrolled hosts.
 
 | Host                        | Role          |
 | --------------------------- | ------------- |
-| prod-ipa-0.home.arpa        | IPA server    |
-| prod-git-0.home.arpa        | Gitea CI/CD   |
-| prod-mon-0.home.arpa        | Monitoring    |
-| prod-k3s-master-0.home.arpa | k3s master    |
-| prod-k3s-worker-0.home.arpa | k3s worker    |
-| prod-k3s-worker-1.home.arpa | k3s worker    |
-| dev-rhel-0.home.arpa        | RHEL dev VM   |
-| dev-ubuntu-0.home.arpa      | Ubuntu dev VM |
+| mikoshi.home.arpa        | IPA server    |
+| soulkiller.home.arpa        | Gitea CI/CD   |
+| netwatch.home.arpa        | Monitoring    |
+| erebus.home.arpa | k3s master    |
+| sandevistan.home.arpa | k3s worker    |
+| kerenzikov.home.arpa | k3s worker    |
+| drone-01.home.arpa        | RHEL dev VM   |
+| drone-02.home.arpa      | Ubuntu dev VM |
 | ctrl-node.home.arpa         | Control node  |
 
 ## Access control

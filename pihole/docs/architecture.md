@@ -35,7 +35,7 @@ flowchart LR
         IPACLIENTS["FreeIPA clients\n(Pi-hole as upstream)"]
     end
 
-    subgraph RPI["netrunner-rpi (10.33.111.141)"]
+    subgraph RPI["netrunner (10.33.111.141)"]
         FTL["pihole-FTL\nDNS :53 · DHCP"]
         GRAVITY[("gravity\nblocklist DB")]
         LOCAL[("local DNS\nrecords")]
@@ -76,11 +76,11 @@ flowchart LR
 
 The lab has two DNS servers with distinct roles:
 
-**FreeIPA BIND** (`prod-ipa-0`, `10.33.111.100`) — authoritative for `home.arpa`.
+**FreeIPA BIND** (`mikoshi`, `10.33.111.100`) — authoritative for `home.arpa`.
 IPA-enrolled hosts (all lab VMs) use FreeIPA as their primary DNS.
 FreeIPA's BIND uses Pi-hole as its upstream forwarder for queries it can't answer locally.
 
-**Pi-hole** (`netrunner-rpi`, `10.33.111.141`) — DNS resolver and content filter.
+**Pi-hole** (`netrunner`, `10.33.111.141`) — DNS resolver and content filter.
 Non-enrolled devices use Pi-hole as their sole DNS server.
 WireGuard clients use Pi-hole via the tunnel.
 FreeIPA-enrolled clients use Pi-hole indirectly as the upstream forwarder.

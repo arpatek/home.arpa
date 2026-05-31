@@ -1,9 +1,9 @@
 [domain/home.arpa]
 
 id_provider = ipa
-ipa_server = _srv_, prod-ipa-0.home.arpa
+ipa_server = _srv_, mikoshi.home.arpa
 ipa_domain = home.arpa
-ipa_hostname = prod-mon-0.home.arpa
+ipa_hostname = netwatch.home.arpa
 auth_provider = ipa
 chpass_provider = ipa
 access_provider = ipa

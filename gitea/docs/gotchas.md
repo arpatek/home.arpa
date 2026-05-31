@@ -47,14 +47,14 @@ even with the correct hostname and port.
 FreeIPA configures SSSD to serve SSH host keys via `sss_ssh_knownhosts`.
 The key it serves is for the host's own SSH daemon on port 22.
 Gitea's SSH runs on port 2222, and the key presented there does not match
-what SSSD has on record for `prod-git-0.home.arpa`.
+what SSSD has on record for `soulkiller.home.arpa`.
 
 **Fix.**
 Add a `Host` entry to `~/.ssh/config` on the client that disables `KnownHostsCommand`
-for `prod-git-0.home.arpa`:
+for `soulkiller.home.arpa`:
 
 ```
-Host prod-git-0.home.arpa
+Host soulkiller.home.arpa
     KnownHostsCommand none
     Port 2222
 ```

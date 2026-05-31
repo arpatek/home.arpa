@@ -15465,8 +15465,8 @@
       },
       {
         "current": {
-          "text": "prod-mon-0.home.arpa",
-          "value": "prod-mon-0.home.arpa"
+          "text": "netwatch.home.arpa",
+          "value": "netwatch.home.arpa"
         },
         "datasource": {
           "type": "prometheus",
@@ -15489,8 +15489,8 @@
       },
       {
         "current": {
-          "text": "prod-mon-0.home.arpa:9100",
-          "value": "prod-mon-0.home.arpa:9100"
+          "text": "netwatch.home.arpa:9100",
+          "value": "netwatch.home.arpa:9100"
         },
         "datasource": {
           "type": "prometheus",

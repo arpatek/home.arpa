@@ -91,7 +91,7 @@ MTU = 1380
 To find the right value for a given connection, ping with a fixed packet size until drops stop:
 
 ```bash
-ping -M do -s 1350 prod-mon-0.home.arpa   # adjust -s until pings succeed consistently
+ping -M do -s 1350 netwatch.home.arpa   # adjust -s until pings succeed consistently
 ```
 
 **Broken assumption.**

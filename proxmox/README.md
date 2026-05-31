@@ -11,7 +11,7 @@
 | OS           | Proxmox VE 9.1.9                       |
 | Kernel       | 7.0.0-3-pve                            |
 | IP           | 10.33.111.44                           |
-| Hostname     | devstem.home.arpa                      |
+| Hostname     | blackwall.home.arpa                      |
 
 ## Overview
 
@@ -40,14 +40,14 @@ All VMs attach to `vmbr0` and receive IPs from Pi-hole DHCP or via cloud-init st
 
 | VMID | Name                  | Status   | vCPUs | RAM    | Disk   | IP              |
 | ---- | --------------------- | -------- | ----- | ------ | ------ | --------------- |
-| 100  | prod-ipa-0            | running  | 2     | 3GB    | 80GB   | 10.33.111.100   |
-| 101  | prod-git-0            | running  | 4     | 4GB    | 80GB   | 10.33.111.101   |
-| 102  | prod-mon-0            | running  | 2     | 4GB    | 100GB  | 10.33.111.102   |
-| 103  | prod-k3s-master-0     | running  | 2     | 4GB    | 100GB  | 10.33.111.103   |
-| 104  | prod-k3s-worker-0     | running  | 2     | 4GB    | 100GB  | 10.33.111.104   |
-| 105  | prod-k3s-worker-1     | running  | 2     | 4GB    | 100GB  | 10.33.111.105   |
-| 200  | dev-rhel-0            | stopped  | 2     | 4GB    | 64GB   | 10.33.111.200   |
-| 201  | dev-ubuntu-0          | stopped  | 2     | 4GB    | 64GB   | 10.33.111.201   |
+| 100  | mikoshi            | running  | 2     | 3GB    | 80GB   | 10.33.111.100   |
+| 101  | soulkiller            | running  | 4     | 4GB    | 80GB   | 10.33.111.101   |
+| 102  | netwatch            | running  | 2     | 4GB    | 100GB  | 10.33.111.102   |
+| 103  | erebus     | running  | 2     | 4GB    | 100GB  | 10.33.111.103   |
+| 104  | sandevistan     | running  | 2     | 4GB    | 100GB  | 10.33.111.104   |
+| 105  | kerenzikov     | running  | 2     | 4GB    | 100GB  | 10.33.111.105   |
+| 200  | drone-01            | stopped  | 2     | 4GB    | 64GB   | 10.33.111.200   |
+| 201  | drone-02          | stopped  | 2     | 4GB    | 64GB   | 10.33.111.201   |
 | 9000 | debian-13-cloud       | template | —     | —      | 3GB    | —               |
 
 ## Repository layout
@@ -70,7 +70,7 @@ proxmox/
 sudo qm list
 
 # Check resource usage on the host
-sudo pvesh get /nodes/devstem/status
+sudo pvesh get /nodes/blackwall/status
 
 # Start / stop a VM
 sudo qm start <vmid>

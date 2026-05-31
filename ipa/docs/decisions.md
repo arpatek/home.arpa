@@ -45,7 +45,7 @@ Having a working internal CA is foundational for future services that need TLS w
 
 ## Rocky Linux for the IPA server
 
-**Decision.** `prod-ipa-0` runs Rocky Linux 9.7.
+**Decision.** `mikoshi` runs Rocky Linux 9.7.
 All other homelab VMs run Debian 13.
 
 **Alternatives considered.**
@@ -67,7 +67,7 @@ Running FreeIPA on Debian works but puts you one step away from the canonical co
 
 The operational difference is manageable.
 One RHEL-family host in an otherwise Debian fleet means learning `dnf` and `firewall-cmd` for one machine.
-The monitoring stack already handles this split — `prod-ipa-0` uses native systemd agents while Debian hosts use containerized agents.
+The monitoring stack already handles this split — `mikoshi` uses native systemd agents while Debian hosts use containerized agents.
 The pattern is established.
 
 **Decision to revisit.**
@@ -85,7 +85,7 @@ Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and as the
 _Pi-hole as primary DNS for all hosts._ Pi-hole was already running on the network before IPA was built.
 Using it as the single DNS server would have been simpler.
 
-_Separate BIND instance._ Run BIND independently on `prod-ipa-0` or another host, manage zone files manually.
+_Separate BIND instance._ Run BIND independently on `mikoshi` or another host, manage zone files manually.
 FreeIPA would integrate with it via dynamic DNS updates.
 
 _DNS entirely separate from IPA._ Deploy IPA without DNS integration, manage DNS on Pi-hole or a standalone BIND, maintain DNS records manually.
@@ -116,7 +116,7 @@ The split is: IPA DNS is authoritative for `home.arpa`, Pi-hole is the upstream 
 
 ## Smaller decisions
 
-**Single master, no replica.** A single `prod-ipa-0` with no replica is a deliberate homelab trade-off. A replica would survive the primary going down, but setting one up means a second always-on VM consuming resources for marginal benefit. SSSD's credential caching means enrolled hosts can continue to function for a limited time during an outage. The risk is accepted.
+**Single master, no replica.** A single `mikoshi` with no replica is a deliberate homelab trade-off. A replica would survive the primary going down, but setting one up means a second always-on VM consuming resources for marginal benefit. SSSD's credential caching means enrolled hosts can continue to function for a limited time during an outage. The risk is accepted.
 
 **HBAC deny-all with explicit allow.** The default `allow_all` HBAC rule is disabled. Access is granted only via `allow_ssh_devops`, which explicitly names the user groups, host groups, and services permitted. The cost is that a new host group or user group must be explicitly added to the rule to get access; the benefit is that access is never accidentally granted to a new host or user.
 

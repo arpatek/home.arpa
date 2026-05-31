@@ -62,11 +62,11 @@ services:
     image: gitea/gitea:1.26.2  # new version here
 ```
 
-Copy and apply on `prod-git-0`:
+Copy and apply on `soulkiller`:
 
 ```bash
-scp gitea/docker-compose.yml prod-git-0.home.arpa:/opt/gitea/
-ssh prod-git-0.home.arpa "cd /opt/gitea && sudo docker compose pull gitea && sudo docker compose up -d gitea"
+scp gitea/docker-compose.yml soulkiller.home.arpa:/opt/gitea/
+ssh soulkiller.home.arpa "cd /opt/gitea && sudo docker compose pull gitea && sudo docker compose up -d gitea"
 ```
 
 **Verification.**
@@ -76,7 +76,7 @@ ssh prod-git-0.home.arpa "cd /opt/gitea && sudo docker compose pull gitea && sud
 docker compose ps gitea
 
 # Running version via API
-curl -s http://prod-git-0.home.arpa:3000/api/v1/version | jq
+curl -s http://soulkiller.home.arpa:3000/api/v1/version | jq
 ```
 
 **Rollback.**
@@ -101,8 +101,8 @@ Edit the tag, pull, and recreate:
 image: postgres:16.14
 
 # Apply
-scp gitea/docker-compose.yml prod-git-0.home.arpa:/opt/gitea/
-ssh prod-git-0.home.arpa "cd /opt/gitea && sudo docker compose pull db && sudo docker compose up -d db"
+scp gitea/docker-compose.yml soulkiller.home.arpa:/opt/gitea/
+ssh soulkiller.home.arpa "cd /opt/gitea && sudo docker compose pull db && sudo docker compose up -d db"
 ```
 
 Major version upgrades (e.g. `16.x → 17.x`) require a dump/restore.
@@ -165,8 +165,8 @@ services:
 Apply:
 
 ```bash
-scp gitea/docker-compose.yml prod-git-0.home.arpa:/opt/gitea/
-ssh prod-git-0.home.arpa "cd /opt/gitea && sudo docker compose pull runner && sudo docker compose up -d runner"
+scp gitea/docker-compose.yml soulkiller.home.arpa:/opt/gitea/
+ssh soulkiller.home.arpa "cd /opt/gitea && sudo docker compose pull runner && sudo docker compose up -d runner"
 ```
 
 **Verification.**

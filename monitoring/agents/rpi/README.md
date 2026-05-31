@@ -19,9 +19,9 @@ The agents install under standard FHS paths: binaries in `/usr/local/bin/`, conf
 The host needs:
 
 - Raspberry Pi OS (Debian-based, ARM64)
-- DNS resolution for `prod-mon-0.home.arpa` working
-- Outbound HTTP to `prod-mon-0.home.arpa:3100` (Loki) reachable
-- Inbound HTTP from `prod-mon-0.home.arpa` to `:9100` (node_exporter) and `:12345` (Alloy debug UI) reachable
+- DNS resolution for `netwatch.home.arpa` working
+- Outbound HTTP to `netwatch.home.arpa:3100` (Loki) reachable
+- Inbound HTTP from `netwatch.home.arpa` to `:9100` (node_exporter) and `:12345` (Alloy debug UI) reachable
 
 ## Deployment
 
@@ -111,7 +111,7 @@ sudo mv /tmp/alloy.service /etc/systemd/system/alloy.service
 ```bash
 sudo nano /etc/alloy/config.alloy
 # Set "host" to the short hostname of this host
-# Example: "host" = "netrunner-rpi"
+# Example: "host" = "netrunner"
 ```
 
 **On the target host:** start Alloy.
@@ -138,19 +138,19 @@ Add the new host to the `node` job only (no cAdvisor on RPi hosts):
 - job_name: "node"
   static_configs:
     - targets:
-        - "prod-mon-0.home.arpa:9100"
+        - "netwatch.home.arpa:9100"
         - "<new-host>.home.arpa:9100" # add this line
 ```
 
-**From the local repo clone:** copy the updated config to `prod-mon-0`.
+**From the local repo clone:** copy the updated config to `netwatch`.
 
 ```bash
 cd <path-to-repo>/monitoring/server
 
-scp prometheus/prometheus.yml prod-mon-0.home.arpa:/tmp/
+scp prometheus/prometheus.yml netwatch.home.arpa:/tmp/
 ```
 
-**On `prod-mon-0`:** move the config into place and reload Prometheus.
+**On `netwatch`:** move the config into place and reload Prometheus.
 
 ```bash
 sudo mv /tmp/prometheus.yml /opt/monitoring/prometheus/config/

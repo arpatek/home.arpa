@@ -1,6 +1,6 @@
 # Upgrading
 
-Procedures for upgrading Proxmox VE on `devstem`.
+Procedures for upgrading Proxmox VE on `blackwall`.
 
 ## Currently installed
 

@@ -1,6 +1,6 @@
 # Upgrading
 
-Procedures for upgrading FreeIPA and the host OS on `prod-ipa-0`.
+Procedures for upgrading FreeIPA and the host OS on `mikoshi`.
 
 IPA upgrades are different from the Docker-based services in the rest of this lab.
 There are no container image tags to pin or bump.
@@ -77,10 +77,10 @@ rpm -q ipa-server
 sudo ipactl status
 
 # Verify DNS is still resolving
-dig prod-git-0.home.arpa A @prod-ipa-0.home.arpa
+dig soulkiller.home.arpa A @mikoshi.home.arpa
 
 # Verify authentication from an enrolled client
-ssh prod-git-0.home.arpa "id arpatek"
+ssh soulkiller.home.arpa "id arpatek"
 ```
 
 **Rollback.**
@@ -108,12 +108,12 @@ The FreeIPA package version may increment as part of this update.
 The same verification steps apply as for a package-only upgrade.
 
 Take a backup and VM snapshot before the update.
-Rebooting `prod-ipa-0` causes a brief outage for all enrolled hosts — they fall back to SSSD's local cache during the reboot window.
+Rebooting `mikoshi` causes a brief outage for all enrolled hosts — they fall back to SSSD's local cache during the reboot window.
 
 ## Rocky Linux major version upgrade (9 → 10)
 
 Rocky Linux 10 is available.
-A major version upgrade of an IPA server is a significant operation — more so than for other hosts because `prod-ipa-0` is load-bearing for DNS and authentication across the entire lab.
+A major version upgrade of an IPA server is a significant operation — more so than for other hosts because `mikoshi` is load-bearing for DNS and authentication across the entire lab.
 
 Two paths:
 

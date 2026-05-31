@@ -43,7 +43,7 @@ export INSTALL_K3S_VERSION=v1.36.0+k3s1
 
 curl -sfL https://get.k3s.io | sudo -E sh -s - server \
   --node-taint node-role.kubernetes.io/control-plane=:NoSchedule \
-  --tls-san prod-k3s-master-0.home.arpa \
+  --tls-san erebus.home.arpa \
   --tls-san 10.33.111.103 \
   --write-kubeconfig-mode 644
 ```
@@ -59,7 +59,7 @@ kubectl get nodes
 
 ```bash
 # Drain the node first — moves its pods to the other worker
-kubectl drain prod-k3s-worker-0.home.arpa --ignore-daemonsets --delete-emptydir-data
+kubectl drain sandevistan.home.arpa --ignore-daemonsets --delete-emptydir-data
 
 ssh arpatek@10.33.111.104
 export INSTALL_K3S_VERSION=v1.36.0+k3s1
@@ -68,10 +68,10 @@ export K3S_TOKEN=$(ssh arpatek@10.33.111.103 "sudo cat /var/lib/rancher/k3s/serv
 curl -sfL https://get.k3s.io | sudo -E sh -
 
 # Back on local machine — uncordon the node to allow scheduling again
-kubectl uncordon prod-k3s-worker-0.home.arpa
+kubectl uncordon sandevistan.home.arpa
 ```
 
-Repeat for `prod-k3s-worker-1`.
+Repeat for `kerenzikov`.
 
 **Why drain before upgrading a worker:**
 Draining evicts all pods from the node gracefully before the upgrade restarts the k3s-agent service.
@@ -89,7 +89,7 @@ ssh arpatek@10.33.111.103
 export INSTALL_K3S_VERSION=v1.35.4+k3s1
 curl -sfL https://get.k3s.io | sudo -E sh -s - server \
   --node-taint node-role.kubernetes.io/control-plane=:NoSchedule \
-  --tls-san prod-k3s-master-0.home.arpa \
+  --tls-san erebus.home.arpa \
   --tls-san 10.33.111.103 \
   --write-kubeconfig-mode 644
 ```
@@ -97,13 +97,13 @@ curl -sfL https://get.k3s.io | sudo -E sh -s - server \
 **On each worker:**
 
 ```bash
-kubectl drain prod-k3s-worker-0.home.arpa --ignore-daemonsets --delete-emptydir-data
+kubectl drain sandevistan.home.arpa --ignore-daemonsets --delete-emptydir-data
 ssh arpatek@10.33.111.104
 export INSTALL_K3S_VERSION=v1.35.4+k3s1
 export K3S_URL=https://10.33.111.103:6443
 export K3S_TOKEN=$(ssh arpatek@10.33.111.103 "sudo cat /var/lib/rancher/k3s/server/node-token")
 curl -sfL https://get.k3s.io | sudo -E sh -
-kubectl uncordon prod-k3s-worker-0.home.arpa
+kubectl uncordon sandevistan.home.arpa
 ```
 
 Kubernetes API compatibility means the workers will reconnect immediately once the master is back.

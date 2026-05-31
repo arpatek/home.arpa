@@ -70,7 +70,7 @@ The version of cAdvisor that supports containerd snapshotter exists. Verifying c
 ## Loki rejects logs older than its retention threshold, even on first run
 
 **Symptom.**
-Right after deploying Alloy on prod-git-0 and pointing it at the central Loki, log ingestion seemed broken.
+Right after deploying Alloy on soulkiller and pointing it at the central Loki, log ingestion seemed broken.
 The Alloy logs were full of rejection errors from Loki:
 
 ```
@@ -121,7 +121,7 @@ The mental model from one doesn't transfer cleanly to the other.
 ## SELinux preserves source context across `mv` on RHEL
 
 **Symptom.**
-On prod-ipa-0 (Rocky 9.7), I downloaded the node_exporter binary to `/tmp` and moved it to `/usr/local/bin/`.
+On mikoshi (Rocky 9.7), I downloaded the node_exporter binary to `/tmp` and moved it to `/usr/local/bin/`.
 The systemd service refused to start, exiting with status `203/EXEC`:
 
 ```
@@ -189,9 +189,9 @@ You need `ls -lZ` to see them, and most tutorials don't mention it.
 ## Alloy needs explicit `SupplementaryGroups=systemd-journal` in its systemd unit
 
 **Symptom.**
-On prod-ipa-0, Alloy was installed and configured to read from journald.
+On mikoshi, Alloy was installed and configured to read from journald.
 The service ran without errors.
-But Loki had no logs from prod-ipa-0.
+But Loki had no logs from mikoshi.
 Alloy's own logs showed permission errors when trying to read journal files:
 
 ```

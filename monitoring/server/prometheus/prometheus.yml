@@ -10,13 +10,13 @@ scrape_configs:
   - job_name: 'node'
     static_configs:
       - targets:
-          - 'prod-mon-0.home.arpa:9100'
-          - 'prod-git-0.home.arpa:9100'
-          - 'prod-ipa-0.home.arpa:9100'
-          - 'netrunner-rpi.home.arpa:9100'
+          - 'netwatch.home.arpa:9100'
+          - 'soulkiller.home.arpa:9100'
+          - 'mikoshi.home.arpa:9100'
+          - 'netrunner.home.arpa:9100'
 
   - job_name: 'cadvisor'
     static_configs:
       - targets:
-          - 'prod-mon-0.home.arpa:8080'
-          - 'prod-git-0.home.arpa:8080'
+          - 'netwatch.home.arpa:8080'
+          - 'soulkiller.home.arpa:8080'

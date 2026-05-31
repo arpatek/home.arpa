@@ -37,7 +37,7 @@ The protocol design makes some classes of attack impossible by construction (no 
 
 ## Running on the Pi over a lab VM
 
-**Decision.** WireGuard runs on `netrunner-rpi` (bare metal Raspberry Pi), not on a VM inside Proxmox.
+**Decision.** WireGuard runs on `netrunner` (bare metal Raspberry Pi), not on a VM inside Proxmox.
 
 **Alternatives considered.**
 
@@ -59,7 +59,7 @@ Both services are lightweight and don't compete for resources.
 
 ## Hub-and-spoke over mesh
 
-**Decision.** All peers connect to `netrunner-rpi` as the hub.
+**Decision.** All peers connect to `netrunner` as the hub.
 Peers have no routes to each other.
 
 **Alternatives considered.**
@@ -107,7 +107,7 @@ Fragile — if a peer is traveling when the IP changes, access is lost until the
 **Why Cloudflare.**
 The domain is already managed on Cloudflare.
 Using Cloudflare's API for DDNS keeps DNS management in one place.
-The DDNS client runs as a systemd service on `netrunner-rpi` and updates the record automatically when the IP changes.
+The DDNS client runs as a systemd service on `netrunner` and updates the record automatically when the IP changes.
 
 > The DDNS client implementation is documented separately at [codeberg.org/arpatek/cloudflare-ddns](https://codeberg.org/arpatek/cloudflare-ddns).
 

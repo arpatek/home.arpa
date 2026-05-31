@@ -9,7 +9,7 @@ For things that broke during setup, see [gotchas.md](gotchas.md).
 ## Component overview
 
 **WireGuard kernel module** — the VPN engine.
-Creates a virtual network interface (`wg0`) on `netrunner-rpi`.
+Creates a virtual network interface (`wg0`) on `netrunner`.
 Handles encryption and decryption of all tunnel traffic using the Noise protocol (Curve25519 key exchange, ChaCha20-Poly1305 encryption, BLAKE2s hashing).
 Built into the Linux kernel since 5.6 — no daemon, no userspace process keeping the tunnel alive.
 
@@ -30,7 +30,7 @@ Peers connect to the DDNS hostname rather than a raw IP, so they stay connected 
 ## Topology
 
 The setup is hub-and-spoke.
-`netrunner-rpi` is the hub — all remote peers connect to it.
+`netrunner` is the hub — all remote peers connect to it.
 Peers have no routes to each other; all LAN access goes through the hub.
 
 ```mermaid
@@ -41,7 +41,7 @@ flowchart LR
         DG["deck-gamma\n10.10.10.12"]
     end
 
-    subgraph RPI["netrunner-rpi (10.33.111.141)"]
+    subgraph RPI["netrunner (10.33.111.141)"]
         WG["wg0\n10.10.10.1"]
         IPT["iptables\nNAT · FORWARD"]
         ETH["eth0\n10.33.111.141"]
@@ -76,7 +76,7 @@ flowchart LR
 
 1. A remote peer (e.g. `node-zero`) sends an encrypted UDP packet to the DDNS hostname on port 55055.
 2. The Netgear gateway receives the packet on its public IP and forwards it to `10.33.111.141:55055`.
-3. The WireGuard kernel module on `netrunner-rpi` decrypts the packet using the peer's public key and delivers it to the `wg0` interface.
+3. The WireGuard kernel module on `netrunner` decrypts the packet using the peer's public key and delivers it to the `wg0` interface.
 4. The kernel checks the source IP against the peer's `AllowedIPs` (`10.10.10.10/32`).
    If it doesn't match, the packet is dropped.
 5. The iptables `FORWARD` rule passes the packet from `wg0` to `eth0`.
@@ -96,7 +96,7 @@ Every peer has a public/private keypair generated with `wg genkey` / `wg pubkey`
 The server also has its own keypair.
 
 Private keys never leave the device that generated them.
-The server's private key lives in `/etc/wireguard/wg0.conf` on `netrunner-rpi`.
+The server's private key lives in `/etc/wireguard/wg0.conf` on `netrunner`.
 Peer private keys live on each peer device.
 
 Public keys are shared freely — the server's public key is in `wg0.conf.example` in this repo.

@@ -8,7 +8,7 @@ loki.source.journal "system" {
 	relabel_rules = discovery.relabel.journal.rules
 	forward_to    = [loki.write.remote.receiver]
 	labels        = {
-		"host" = "netrunner-rpi",
+		"host" = "netrunner",
 	}
 }
 
@@ -33,6 +33,6 @@ discovery.relabel "journal" {
 
 loki.write "remote" {
 	endpoint {
-		url = "http://prod-mon-0.home.arpa:3100/loki/api/v1/push"
+		url = "http://netwatch.home.arpa:3100/loki/api/v1/push"
 	}
 }

@@ -1,6 +1,6 @@
 # Upgrading
 
-Procedures for upgrading Pi-hole on `netrunner-rpi`.
+Procedures for upgrading Pi-hole on `netrunner`.
 
 ## Currently installed
 
@@ -46,10 +46,10 @@ systemctl status pihole-FTL
 systemctl status lighttpd
 
 # Check DNS is resolving
-dig prod-mon-0.home.arpa @10.33.111.141
+dig netwatch.home.arpa @10.33.111.141
 
 # Check the admin UI is reachable
-curl -sk https://netrunner-rpi.home.arpa/admin/ | grep -i "pi-hole"
+curl -sk https://netrunner.home.arpa/admin/ | grep -i "pi-hole"
 
 # Verify gravity is intact (blocklist still active)
 pihole status
@@ -87,7 +87,7 @@ For major Raspberry Pi OS upgrades, the safest path is:
 
 ## Adding or removing blocklists
 
-Blocklists are managed through the admin UI at `https://netrunner-rpi.home.arpa/admin/` under Lists.
+Blocklists are managed through the admin UI at `https://netrunner.home.arpa/admin/` under Lists.
 
 After adding or removing a list, rebuild gravity to apply the change:
 

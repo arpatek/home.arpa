@@ -32,7 +32,7 @@ Neither AdGuard Home nor a router-based solution integrates as cleanly with Pi-h
 
 ## Co-locating Pi-hole and WireGuard on the Pi
 
-**Decision.** Both Pi-hole and WireGuard run on `netrunner-rpi`.
+**Decision.** Both Pi-hole and WireGuard run on `netrunner`.
 
 **Alternatives considered.**
 

@@ -7,7 +7,7 @@
 | Hardware | Raspberry Pi 4B, 8GB RAM, SanDisk 256GB MicroSD, Argon NEO Case |
 | OS       | Raspberry Pi OS Lite (based on Debian 13 Trixie)                |
 | IP       | 10.33.111.141                                                   |
-| Hostname | netrunner-rpi                                                   |
+| Hostname | netrunner                                                   |
 
 ## Overview
 
@@ -67,7 +67,7 @@ Netgear Gateway (10.33.111.1)
     │
     │ Port forward → 10.33.111.141:55055
     ▼
-netrunner-rpi (10.33.111.141) ← WireGuard server (10.10.10.1)
+netrunner (10.33.111.141) ← WireGuard server (10.10.10.1)
     │
     ├── node-zero  (10.10.10.10) — MacBook Air
     ├── deck-alpha (10.10.10.11) — iPhone
@@ -86,7 +86,7 @@ netrunner-rpi (10.33.111.141) ← WireGuard server (10.10.10.1)
 | MTU               | `1380`                                         |
 | Server public key | `IOqqhFIWdAm+PkkCuN5/oy73cJsonykXelWKMjWQ81Q=` |
 
-The private key is stored only in `/etc/wireguard/wg0.conf` on `netrunner-rpi` and is never committed to this repo.
+The private key is stored only in `/etc/wireguard/wg0.conf` on `netrunner` and is never committed to this repo.
 
 ### MTU tuning
 

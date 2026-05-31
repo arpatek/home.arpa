@@ -4,33 +4,33 @@
 
 **Subnet:** `10.33.111.0/24`
 **Gateway:** `10.33.111.1` (home router)
-**DHCP server:** Pi-hole on `netrunner-rpi` (`10.33.111.141`), range `10.33.111.2–254`
+**DHCP server:** Pi-hole on `netrunner` (`10.33.111.141`), range `10.33.111.2–254`
 
 ## Host IP assignments
 
 | Host | IP | Notes |
 | ---- | -- | ----- |
-| `devstem` | `10.33.111.44` | Proxmox hypervisor, static |
-| `prod-ipa-0` | `10.33.111.100` | static |
-| `prod-git-0` | `10.33.111.101` | static |
-| `prod-mon-0` | `10.33.111.102` | static |
-| `prod-k3s-master-0` | `10.33.111.103` | static, set via cloud-init |
-| `prod-k3s-worker-0` | `10.33.111.104` | static, set via cloud-init |
-| `prod-k3s-worker-1` | `10.33.111.105` | static, set via cloud-init |
-| `netrunner-rpi` | `10.33.111.141` | static |
-| `dev-rhel-0` | `10.33.111.200` | DHCP reservation, VM normally stopped |
-| `dev-ubuntu-0` | `10.33.111.201` | DHCP reservation, VM normally stopped |
+| `blackwall` | `10.33.111.44` | Proxmox hypervisor, static |
+| `mikoshi` | `10.33.111.100` | static |
+| `soulkiller` | `10.33.111.101` | static |
+| `netwatch` | `10.33.111.102` | static |
+| `erebus` | `10.33.111.103` | static, set via cloud-init |
+| `sandevistan` | `10.33.111.104` | static, set via cloud-init |
+| `kerenzikov` | `10.33.111.105` | static, set via cloud-init |
+| `netrunner` | `10.33.111.141` | static |
+| `drone-01` | `10.33.111.200` | DHCP reservation, VM normally stopped |
+| `drone-02` | `10.33.111.201` | DHCP reservation, VM normally stopped |
 
 ## DNS
 
 The lab uses a two-tier DNS system.
 
-**FreeIPA BIND** (`prod-ipa-0`, `10.33.111.100`) is the authoritative DNS server for `home.arpa`.
-All IPA-enrolled VMs point their resolver at `prod-ipa-0`.
+**FreeIPA BIND** (`mikoshi`, `10.33.111.100`) is the authoritative DNS server for `home.arpa`.
+All IPA-enrolled VMs point their resolver at `mikoshi`.
 FreeIPA BIND answers `home.arpa` queries authoritatively and forwards everything else upstream to Pi-hole.
-Non-enrolled infrastructure hosts (e.g. `netrunner-rpi`) also have manually managed A and PTR records in FreeIPA DNS so that enrolled VMs can resolve them by FQDN.
+Non-enrolled infrastructure hosts (e.g. `netrunner`) also have manually managed A and PTR records in FreeIPA DNS so that enrolled VMs can resolve them by FQDN.
 
-**Pi-hole** (`netrunner-rpi`, `10.33.111.141`) is the recursive resolver and content filter for the rest of the network.
+**Pi-hole** (`netrunner`, `10.33.111.141`) is the recursive resolver and content filter for the rest of the network.
 Non-enrolled devices (laptops, phones, IoT) use Pi-hole as their only DNS server.
 WireGuard clients use Pi-hole via the tunnel.
 FreeIPA-enrolled VMs also reach Pi-hole indirectly — BIND forwards non-`home.arpa` queries to it.
@@ -39,12 +39,12 @@ The result: every DNS query that leaves the lab, regardless of client type, pass
 
 ## VPN
 
-WireGuard runs on `netrunner-rpi`, listening on UDP port `55055`.
+WireGuard runs on `netrunner`, listening on UDP port `55055`.
 The tunnel subnet is `10.10.10.0/24`.
 
 | Role | WireGuard IP |
 | ---- | ------------ |
-| `netrunner-rpi` (server) | `10.10.10.1` |
+| `netrunner` (server) | `10.10.10.1` |
 | connected clients | `10.10.10.2+` |
 
 Client traffic is masqueraded behind the Pi's LAN IP (`10.33.111.141`) so LAN hosts can route responses back to tunnel clients.
@@ -55,7 +55,7 @@ Peers are configured with that hostname so reconnection is automatic after an IP
 
 ## Firewall posture
 
-**Internet-facing:** the home router forwards only one port — UDP `55055` to `netrunner-rpi` for WireGuard.
+**Internet-facing:** the home router forwards only one port — UDP `55055` to `netrunner` for WireGuard.
 No other ports are open inbound from the internet.
 Web services (`arpatek.dev`, `git.arpatek.dev`) will reach the public through a Cloudflare Tunnel, which requires no inbound port forwarding.
 
@@ -77,8 +77,8 @@ Once deployed, the expected traffic path is:
 
 ```
 client → Cloudflare edge → cloudflared tunnel → k3s Traefik → arpatek.dev pod
-client → Cloudflare edge → cloudflared tunnel → k3s Traefik → prod-git-0:3000
+client → Cloudflare edge → cloudflared tunnel → k3s Traefik → soulkiller:3000
 ```
 
 TLS is handled by cert-manager using a Let's Encrypt wildcard certificate issued via Cloudflare DNS-01.
-Gitea SSH (`prod-git-0:2222`) will not be publicly exposed — SSH access remains WireGuard-only.
+Gitea SSH (`soulkiller:2222`) will not be publicly exposed — SSH access remains WireGuard-only.

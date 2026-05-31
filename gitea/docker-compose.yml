@@ -42,11 +42,11 @@ services:
     depends_on:
       - gitea
     environment:
-      - GITEA_INSTANCE_URL=http://prod-git-0.home.arpa:3000
+      - GITEA_INSTANCE_URL=http://soulkiller.home.arpa:3000
       - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_TOKEN}
-      - GITEA_RUNNER_NAME=prod-git-0-runner
-      - GITEA__server__ROOT_URL=http://prod-git-0.home.arpa:3000
-      - GITEA__server__LOCAL_ROOT_URL=http://prod-git-0.home.arpa:3000
+      - GITEA_RUNNER_NAME=soulkiller-runner
+      - GITEA__server__ROOT_URL=http://soulkiller.home.arpa:3000
+      - GITEA__server__LOCAL_ROOT_URL=http://soulkiller.home.arpa:3000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/gitea/runner:/data

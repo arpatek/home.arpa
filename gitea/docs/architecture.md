@@ -25,12 +25,12 @@ Communicates with Docker via the host socket at `/var/run/docker.sock`.
 
 ## Topology
 
-All three services run on `prod-git-0` in a single Docker Compose project.
+All three services run on `soulkiller` in a single Docker Compose project.
 They share a dedicated bridge network (`gitea-net`).
 
 ```mermaid
 flowchart LR
-    subgraph HOST["prod-git-0 (10.33.111.101)"]
+    subgraph HOST["soulkiller (10.33.111.101)"]
         subgraph NET["gitea-net (bridge)"]
             GITEA["Gitea<br/>:3000 · :22"]
             DB[("PostgreSQL 16<br/>:5432")]
@@ -61,12 +61,12 @@ flowchart LR
     class HOST,NET hostlabel;
 ```
 
-act_runner connects to Gitea via the host's external address (`http://prod-git-0.home.arpa:3000`) rather than the internal Compose service name (`http://gitea:3000`).
+act_runner connects to Gitea via the host's external address (`http://soulkiller.home.arpa:3000`) rather than the internal Compose service name (`http://gitea:3000`).
 The reason is that act_runner spawns job containers on the host's default Docker network, not on `gitea-net`.
 Those job containers cannot resolve Compose service names, so `GITEA_INSTANCE_URL` must be an address reachable from outside the Compose network.
 Using the FQDN works from both act_runner itself and from inside the job containers it spawns.
 
-`prod-git-0` also runs a separate monitoring agent stack at `/opt/monitoring-agents/` (node_exporter, cAdvisor, Alloy).
+`soulkiller` also runs a separate monitoring agent stack at `/opt/monitoring-agents/` (node_exporter, cAdvisor, Alloy).
 That is an independent Compose project; restarting Gitea does not affect the monitoring agents and vice versa.
 
 ## Data flow
@@ -87,7 +87,7 @@ act_runner streams step output back to Gitea as the job runs and writes the fina
 
 ## On-disk layout
 
-All persistent state lives under `/opt/gitea/` on `prod-git-0` as bind mounts:
+All persistent state lives under `/opt/gitea/` on `soulkiller` as bind mounts:
 
 ```
 /opt/gitea/
@@ -116,10 +116,10 @@ Workspaces are cleaned up after each job completes.
 
 | What         | Address                            |
 | ------------ | ---------------------------------- |
-| Gitea web UI | `http://prod-git-0.home.arpa:3000` |
-| Gitea SSH    | `ssh://prod-git-0.home.arpa:2222`  |
+| Gitea web UI | `http://soulkiller.home.arpa:3000` |
+| Gitea SSH    | `ssh://soulkiller.home.arpa:2222`  |
 
-To view service logs, run from `/opt/gitea/` on `prod-git-0`:
+To view service logs, run from `/opt/gitea/` on `soulkiller`:
 
 ```bash
 docker compose logs -f           # all services

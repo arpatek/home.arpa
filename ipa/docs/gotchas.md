@@ -23,7 +23,7 @@ sudo ipa-server-install --setup-dns
 sudo ipa-dns-install
 ```
 
-Before enrolling any client, point the client host's DNS resolver at `prod-ipa-0` (`10.33.111.100`) so it can resolve SRV records.
+Before enrolling any client, point the client host's DNS resolver at `mikoshi` (`10.33.111.100`) so it can resolve SRV records.
 Verify the records exist before attempting enrollment:
 
 ```bash
@@ -121,14 +121,14 @@ kinit arpatek
 Then retry the failing command.
 
 **Broken assumption.**
-I assumed that being logged in to `prod-ipa-0` would keep credentials alive.
+I assumed that being logged in to `mikoshi` would keep credentials alive.
 Kerberos doesn't work that way — the ticket lifetime is fixed at issuance and isn't renewed by activity.
 If a long admin session is needed, run `kinit -r 7d admin` to get a renewable ticket and use `kinit -R` to renew it before it expires.
 
 ## SSSD serves host keys by hostname, not by port
 
 **Symptom.**
-SSH connections to a host that runs SSH on a non-standard port (e.g. Gitea's SSH on port 2222 of `prod-git-0`) fail with a host key verification error, even after the correct key has been accepted previously.
+SSH connections to a host that runs SSH on a non-standard port (e.g. Gitea's SSH on port 2222 of `soulkiller`) fail with a host key verification error, even after the correct key has been accepted previously.
 
 **Cause.**
 FreeIPA configures the SSH client on enrolled hosts to use `sss_ssh_knownhosts` via `KnownHostsCommand` in `/etc/ssh/ssh_config`.
@@ -141,7 +141,7 @@ The mismatch causes the verification failure.
 Add a `Host` entry to `~/.ssh/config` on the client that disables `KnownHostsCommand` for that specific host:
 
 ```
-Host prod-git-0.home.arpa
+Host soulkiller.home.arpa
     KnownHostsCommand none
     Port 2222
 ```

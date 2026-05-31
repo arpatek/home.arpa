@@ -37,9 +37,9 @@ All `ipa` CLI commands and web UI operations go through this API, which translat
 Listens on port 443.
 
 **SSSD** — the client-side identity agent.
-Runs on every enrolled host, including `prod-ipa-0` itself.
+Runs on every enrolled host, including `mikoshi` itself.
 Handles PAM authentication (Kerberos), NSS identity lookups (LDAP), HBAC enforcement, sudo policy retrieval, and SSH host key serving.
-SSSD caches identity and policy data locally, which allows enrolled hosts to continue functioning for a limited time if `prod-ipa-0` is unreachable.
+SSSD caches identity and policy data locally, which allows enrolled hosts to continue functioning for a limited time if `mikoshi` is unreachable.
 
 ## Topology
 
@@ -48,7 +48,7 @@ Every other server-side component connects to it.
 
 ```mermaid
 flowchart TB
-    subgraph IPA["prod-ipa-0 (10.33.111.100)"]
+    subgraph IPA["mikoshi (10.33.111.100)"]
         direction LR
         DS[("389 Directory Server\nLDAP :389")]
         KRB["MIT Kerberos KDC\n:88 · :464"]
@@ -85,7 +85,7 @@ flowchart TB
 
 This stack runs as a single-master deployment.
 There is no replica.
-If `prod-ipa-0` goes down, enrolled hosts can continue operating from SSSD's local cache for a limited time, but new authentication against the KDC and fresh policy lookups will fail until the server comes back.
+If `mikoshi` goes down, enrolled hosts can continue operating from SSSD's local cache for a limited time, but new authentication against the KDC and fresh policy lookups will fail until the server comes back.
 
 ## Authentication flow
 
@@ -95,7 +95,7 @@ What happens when a user logs in to an enrolled host over SSH:
 2. PAM calls the SSSD PAM module (`pam_sss`).
 3. SSSD checks its local cache for an HBAC policy that governs `sshd` access for this user on this host.
    If the cache is stale, SSSD fetches the current HBAC rules from 389-DS over an authenticated LDAP connection.
-4. If HBAC permits access, SSSD contacts the Kerberos KDC on `prod-ipa-0:88` to authenticate the user.
+4. If HBAC permits access, SSSD contacts the Kerberos KDC on `mikoshi:88` to authenticate the user.
 5. The KDC looks up the user's principal in 389-DS, verifies the credential, and issues a Ticket Granting Ticket (TGT).
 6. SSSD caches the TGT and returns success to PAM.
 7. The user's session starts.
@@ -115,13 +115,13 @@ When a new host enrolls via `ipa-client-install`:
 1. The enrollment process creates a host object in 389-DS.
 2. DNS A and PTR records are written to the LDAP DNS zone (`idnszone=home.arpa.`).
 3. BIND picks up the new records automatically — no zone reload required.
-4. The client sets `prod-ipa-0` (`10.33.111.100`) as its primary DNS server.
+4. The client sets `mikoshi` (`10.33.111.100`) as its primary DNS server.
 
 SRV records in the `home.arpa` zone allow clients to discover IPA services without hardcoding the server address:
 
 ```
-_kerberos._tcp.home.arpa.    SRV  0 100 88  prod-ipa-0.home.arpa.
-_ldap._tcp.home.arpa.        SRV  0 100 389 prod-ipa-0.home.arpa.
+_kerberos._tcp.home.arpa.    SRV  0 100 88  mikoshi.home.arpa.
+_ldap._tcp.home.arpa.        SRV  0 100 389 mikoshi.home.arpa.
 _kerberos.home.arpa.         TXT  "HOME.ARPA"
 ```
 
@@ -135,7 +135,7 @@ dig _ldap._tcp.home.arpa SRV
 
 ## On-disk layout
 
-FreeIPA's state is spread across several standard system paths on `prod-ipa-0`:
+FreeIPA's state is spread across several standard system paths on `mikoshi`:
 
 ```
 /etc/ipa/                   # client and server config, CA certificate bundle
@@ -159,11 +159,11 @@ A backup of that directory (taken while the 389-DS service is stopped, or via `d
 
 | What              | Address                                    |
 | ----------------- | ------------------------------------------ |
-| IPA web UI        | `https://prod-ipa-0.home.arpa/ipa/ui`      |
-| IPA XML-RPC API   | `https://prod-ipa-0.home.arpa/ipa/xml`     |
-| LDAP              | `ldap://prod-ipa-0.home.arpa:389`          |
-| Kerberos KDC      | `prod-ipa-0.home.arpa:88`                  |
-| DNS               | `prod-ipa-0.home.arpa:53`                  |
+| IPA web UI        | `https://mikoshi.home.arpa/ipa/ui`      |
+| IPA XML-RPC API   | `https://mikoshi.home.arpa/ipa/xml`     |
+| LDAP              | `ldap://mikoshi.home.arpa:389`          |
+| Kerberos KDC      | `mikoshi.home.arpa:88`                  |
+| DNS               | `mikoshi.home.arpa:53`                  |
 
 Before running `ipa` CLI commands, a valid Kerberos ticket is required:
 

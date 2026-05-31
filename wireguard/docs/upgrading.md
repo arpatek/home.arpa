@@ -1,6 +1,6 @@
 # Upgrading
 
-Upgrade considerations for WireGuard and the host OS on `netrunner-rpi`.
+Upgrade considerations for WireGuard and the host OS on `netrunner`.
 
 WireGuard is built into the Linux kernel — there is no separate package to pin or upgrade.
 The version you get is whatever the Raspberry Pi OS kernel ships.
@@ -70,7 +70,7 @@ The entire WireGuard state is in two files (`wg0.conf` and `rules.v4`) plus the 
 wg genkey | tee privatekey | wg pubkey > publickey
 ```
 
-2. Add a `[Peer]` block to `/etc/wireguard/wg0.conf` on `netrunner-rpi`:
+2. Add a `[Peer]` block to `/etc/wireguard/wg0.conf` on `netrunner`:
 
 ```ini
 # Peer: <name>
@@ -105,7 +105,7 @@ No key revocation ceremony is required.
 If a peer's private key is compromised or a device is lost:
 
 1. Generate a new keypair on a replacement or recovered device.
-2. Update the `[Peer] PublicKey` entry in `wg0.conf` on `netrunner-rpi` with the new public key.
+2. Update the `[Peer] PublicKey` entry in `wg0.conf` on `netrunner` with the new public key.
 3. Reload WireGuard.
 4. Update `README.md` and `wg0.conf.example` in this repo.
 
