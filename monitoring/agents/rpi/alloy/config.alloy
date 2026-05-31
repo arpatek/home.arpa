@@ -1,0 +1,38 @@
+logging {
+	level  = "info"
+	format = "logfmt"
+}
+
+loki.source.journal "system" {
+	max_age       = "12h"
+	relabel_rules = discovery.relabel.journal.rules
+	forward_to    = [loki.write.remote.receiver]
+	labels        = {
+		"host" = "netrunner-rpi",
+	}
+}
+
+discovery.relabel "journal" {
+	targets = []
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		target_label  = "unit"
+	}
+
+	rule {
+		source_labels = ["__journal__hostname"]
+		target_label  = "hostname"
+	}
+
+	rule {
+		source_labels = ["__journal_priority_keyword"]
+		target_label  = "level"
+	}
+}
+
+loki.write "remote" {
+	endpoint {
+		url = "http://prod-mon-0.home.arpa:3100/loki/api/v1/push"
+	}
+}

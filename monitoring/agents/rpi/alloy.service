@@ -1,0 +1,35 @@
+[Unit]
+Description=Grafana Alloy
+Documentation=https://grafana.com/docs/alloy/latest/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=alloy
+Group=alloy
+Type=simple
+ExecStart=/usr/local/bin/alloy run \
+  --server.http.listen-addr=0.0.0.0:12345 \
+  --storage.path=/var/lib/alloy/data \
+  /etc/alloy/config.alloy
+Restart=on-failure
+RestartSec=5s
+
+# Permissions for state directory
+StateDirectory=alloy
+StateDirectoryMode=0750
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Allow read access to the journal
+SupplementaryGroups=systemd-journal
+
+[Install]
+WantedBy=multi-user.target
