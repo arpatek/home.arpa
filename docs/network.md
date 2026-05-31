@@ -28,6 +28,7 @@ The lab uses a two-tier DNS system.
 **FreeIPA BIND** (`prod-ipa-0`, `10.33.111.100`) is the authoritative DNS server for `home.arpa`.
 All IPA-enrolled VMs point their resolver at `prod-ipa-0`.
 FreeIPA BIND answers `home.arpa` queries authoritatively and forwards everything else upstream to Pi-hole.
+Non-enrolled infrastructure hosts (e.g. `netrunner-rpi`) also have manually managed A and PTR records in FreeIPA DNS so that enrolled VMs can resolve them by FQDN.
 
 **Pi-hole** (`netrunner-rpi`, `10.33.111.141`) is the recursive resolver and content filter for the rest of the network.
 Non-enrolled devices (laptops, phones, IoT) use Pi-hole as their only DNS server.

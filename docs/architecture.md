@@ -22,7 +22,7 @@ This is a single-node homelab.
 | `prod-k3s-master-0` | `10.33.111.103` | Debian 13.3 | k3s control plane |
 | `prod-k3s-worker-0` | `10.33.111.104` | Debian 13.3 | k3s worker |
 | `prod-k3s-worker-1` | `10.33.111.105` | Debian 13.3 | k3s worker |
-| `netrunner-rpi` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN |
+| `netrunner-rpi` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN + NAS |
 
 ## Services
 
@@ -54,6 +54,9 @@ Current workloads: `arpatek.dev` (FastAPI personal site) and a Traefik proxy for
 Provides remote access into the `10.33.111.0/24` network from anywhere.
 Connected clients use Pi-hole for DNS, matching LAN behavior.
 
+**NAS** — Samba share on `netrunner-rpi`, served from `/srv/nas`.
+Mounted on LAN clients via CIFS at `//netrunner-rpi.home.arpa/NAS`.
+
 ## Service dependencies
 
 ```
@@ -67,6 +70,7 @@ All VMs
 
 Monitoring (prod-mon-0)
   └── All hosts — Prometheus scrapes metrics, Loki receives logs
+  └── netrunner-rpi — node_exporter (:9100) + Alloy (journald → Loki)
 ```
 
 ## Diagram
@@ -91,7 +95,7 @@ flowchart TB
         GIT -->|image push| ARPATEK
     end
 
-    RPI[netrunner-rpi\nPi-hole + WireGuard]
+    RPI[netrunner-rpi\nPi-hole + WireGuard + NAS]
 
     K3S -.->|auth + DNS| IPA
     GIT -.->|auth + DNS| IPA
@@ -130,3 +134,5 @@ Docker named volumes are not used — bind mounts keep data inspectable and back
 | `prod-git-0` | `/opt/gitea/{data,config,postgres,runner}` | repositories, CI artifacts, PostgreSQL data |
 | `prod-mon-0` | `/opt/monitoring/{prometheus,loki,grafana}` | metrics TSDB, log chunks, dashboards |
 | `netrunner-rpi` | `/etc/pihole/`, `/etc/wireguard/` | DNS config, VPN keys and peer config |
+| `netrunner-rpi` | `/srv/nas` | Samba NAS share |
+| `netrunner-rpi` | `/etc/alloy/`, `/usr/local/bin/node_exporter` | monitoring agent configs and binaries |
