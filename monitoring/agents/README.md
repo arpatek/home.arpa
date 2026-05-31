@@ -17,16 +17,21 @@ Currently used on `prod-git-0`.
 Applies to RHEL-family hosts (RHEL, Rocky Linux, AlmaLinux).
 Currently used on `prod-ipa-0`.
 
+[rpi/](rpi/) — native systemd agents, ARM64 binaries, no Docker.
+Applies to Raspberry Pi OS (Debian-based, ARM64) hosts that don't run Docker.
+Currently used on `netrunner-rpi`.
+
 ## What each pattern includes
 
-|                 | Debian                        | RHEL                           |
-| --------------- | ----------------------------- | ------------------------------ |
-| node_exporter   | native systemd                | native systemd                 |
-| cAdvisor        | container (Docker hosts only) | not included                   |
-| Alloy           | container                     | native systemd                 |
-| Log source      | Docker container stdout       | journald                       |
-| Firewall config | not needed (Debian default)   | firewalld rules required       |
-| SELinux         | not applicable                | requires context-aware install |
+|                 | Debian                        | RHEL                           | RPi                            |
+| --------------- | ----------------------------- | ------------------------------ | ------------------------------ |
+| node_exporter   | native systemd                | native systemd                 | native systemd                 |
+| cAdvisor        | container (Docker hosts only) | not included                   | not included                   |
+| Alloy           | container                     | native systemd                 | native systemd                 |
+| Log source      | Docker container stdout       | journald                       | journald                       |
+| Firewall config | not needed (Debian default)   | firewalld rules required       | not needed (iptables-managed)  |
+| SELinux         | not applicable                | requires context-aware install | not applicable                 |
+| Architecture    | amd64                         | amd64                          | arm64                          |
 
 The two patterns are deliberately different because the OS conventions are different.
 For the reasoning behind the dual-runtime decision, see [../docs/decisions.md](../docs/decisions.md).
