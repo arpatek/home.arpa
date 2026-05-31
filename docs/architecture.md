@@ -4,6 +4,7 @@ What the home.arpa lab is, host by host, and how the services fit together.
 
 For the rationale behind specific choices, see the `decisions.md` in each service directory.
 For issues encountered during builds, see each service's `gotchas.md`.
+For the hostname naming convention and migration history, see [docs/hostnames.md](hostnames.md).
 
 ## Lab overview
 
