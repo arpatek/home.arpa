@@ -98,12 +98,12 @@ These back-fill coverage for non-enrolled devices that don't use FreeIPA's BIND.
 | `sandevistan.home.arpa` | `10.33.111.104` |
 | `kerenzikov.home.arpa` | `10.33.111.105` |
 | `ctrl-node.home.arpa`       | `10.33.111.20`  |
-| `node-one.home.arpa`        | `10.33.111.22`  |
-| `node-zero.home.arpa`       | `10.33.111.11`  |
+| `mizutani.home.arpa       | `10.33.111.22``  |
+| `malorian.home.arpa       | `10.33.111.11``  |
 | `drone-01.home.arpa`      | `10.33.111.200` |
 | `drone-02.home.arpa`    | `10.33.111.201` |
-| `node-zero.home.arpa`       | `10.10.10.10`   |
-| `deck-alpha.home.arpa`      | `10.10.10.11`   |
-| `deck-gamma.home.arpa`      | `10.10.10.12`   |
+| `wg-malorian.home.arpa    | `10.10.10.10``   |
+| `wg-uplink.home.arpa      | `10.10.10.11``   |
+| `wg-dataslab.home.arpa    | `10.10.10.12``   |
 | `_kerberos._tcp.home.arpa`  | `10.33.111.100` |
 | `_ldap._tcp.home.arpa`      | `10.33.111.100` |

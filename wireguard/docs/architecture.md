@@ -36,9 +36,9 @@ Peers have no routes to each other; all LAN access goes through the hub.
 ```mermaid
 flowchart LR
     subgraph PEERS["Remote peers"]
-        NZ["node-zero\n10.10.10.10"]
-        DA["deck-alpha\n10.10.10.11"]
-        DG["deck-gamma\n10.10.10.12"]
+        NZ["wg-malorian\n10.10.10.10"]
+        DA["wg-uplink\n10.10.10.11"]
+        DG["wg-dataslab\n10.10.10.12"]
     end
 
     subgraph RPI["netrunner (10.33.111.141)"]
@@ -74,7 +74,7 @@ flowchart LR
 
 ### Inbound (peer → LAN)
 
-1. A remote peer (e.g. `node-zero`) sends an encrypted UDP packet to the DDNS hostname on port 55055.
+1. A remote peer (e.g. `wg-malorian`) sends an encrypted UDP packet to the DDNS hostname on port 55055.
 2. The Netgear gateway receives the packet on its public IP and forwards it to `10.33.111.141:55055`.
 3. The WireGuard kernel module on `netrunner` decrypts the packet using the peer's public key and delivers it to the `wg0` interface.
 4. The kernel checks the source IP against the peer's `AllowedIPs` (`10.10.10.10/32`).
