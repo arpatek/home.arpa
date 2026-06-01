@@ -131,6 +131,53 @@ I assumed a path redirect at the Traefik level would be enough to avoid backend 
 The backend still sees the original `Host` header and redirects to its own canonical name regardless of the request path.
 The Host header must be overridden on the backend connection separately from any client-facing redirect.
 
+## Router IPv6 DNS overrides FreeIPA on k3s nodes
+
+**Symptom.**
+`arpatek.dev` site is down. The `arpatek-dev` pod is stuck in `ImagePullBackOff`.
+The image pull error is `lookup git.arpatek.dev: no such host` even though the hostname resolves
+correctly on other lab machines.
+
+**Cause.**
+The router advertises its own DNS server via DHCPv6/Router Advertisement.
+systemd-resolved picks up both FreeIPA (`10.33.111.100`) and the router's IPv6 link-local address
+(`fe80::b239:56ff:fe4c:214a`) as DNS servers for `eth0`, and selects the IPv6 one as current.
+That router DNS forwards to public resolvers — `git.arpatek.dev` is internal-only and returns
+NXDOMAIN from public DNS, so kubelet cannot pull images from the Gitea registry.
+
+The IPA client install configures FreeIPA as DNS but does not prevent the router's RA from
+injecting an additional server that takes precedence.
+
+**Fix.**
+Two parts:
+
+1. Add an `arpatek.dev` forward zone in FreeIPA pointing to Pi-hole, so that FreeIPA can resolve
+   internal arpatek.dev subdomains when queried by the nodes:
+
+   ```bash
+   kinit admin
+   ipa dnsforwardzone-add arpatek.dev \
+     --forwarder=10.33.111.141 \
+     --forward-policy=only \
+     --skip-overlap-check
+   ```
+
+2. Lock all three k3s nodes to FreeIPA by creating a systemd-resolved drop-in that routes
+   everything through FreeIPA regardless of what the router advertises:
+
+   ```bash
+   printf '[Resolve]\nDNS=10.33.111.100\nDomains=~.\n' \
+     | sudo tee /etc/systemd/resolved.conf.d/ipa.conf
+   sudo systemctl restart systemd-resolved
+   ```
+
+   Run this on erebus, sandevistan, and kerenzikov.
+
+**Broken assumption.**
+IPA client enrollment sets FreeIPA as the DNS server but does not prevent the router from
+advertising additional DNS servers via RA that systemd-resolved may prefer.
+The resolved drop-in must be applied explicitly as part of node provisioning.
+
 ## FreeIPA cannot be reverse proxied behind a different hostname
 
 **Symptom.**
