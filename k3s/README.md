@@ -171,6 +171,12 @@ sudo ipa-client-install \
   --hostname=<hostname>.home.arpa \
   --principal admin \
   --mkhomedir
+
+# Lock DNS to FreeIPA — prevents router RA from injecting a public DNS server
+# that would cause internal hostnames (e.g. git.arpatek.dev) to fail to resolve
+printf '[Resolve]\nDNS=10.33.111.100\nDomains=~.\n' \
+  | sudo tee /etc/systemd/resolved.conf.d/ipa.conf
+sudo systemctl restart systemd-resolved
 ```
 
 ### 3. Install k3s on the master
