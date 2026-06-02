@@ -268,13 +268,27 @@ ipa user-del arpatek
 ipa user-add arpatek --first=Juan --last=Garcia --homedir=/home/arpatek --shell=/bin/bash
 ```
 
-After recreation, fix ownership of the user's home directory on all enrolled hosts using the new numeric UID (check with `ipa user-show arpatek | grep UID`):
+After recreation, fix ownership of the user's home directory on all enrolled hosts.
+**Use the numeric UID, not the username.** If SSSD still has the old user cached when `chown` runs, it resolves the username to the old UID and the fix silently does nothing.
+Get the new UID first:
 
 ```bash
-sudo chown -R <new-uid>:<new-uid> /home/arpatek
+ipa user-show arpatek | grep UID
+# e.g. UID: 104400004
+```
+
+Then on every VM where the user has a home directory:
+
+```bash
+sudo chown -R 104400004:104400004 /home/arpatek
 sudo rm -rf /var/lib/sss/db/*.ldb /var/lib/sss/mc/*
 sudo systemctl restart sssd
 ```
+
+Note: `sss_cache` may not be installed on Debian hosts (`sssd-tools` package).
+Use the `rm -rf` + `systemctl restart sssd` approach instead — it is equivalent and always available.
+
+After the SSSD restart, verify with `id arpatek` that the new UID is returned before relying on sudo or other UID-dependent operations.
 
 **Check ID ranges before recreating with an explicit UID.**
 
