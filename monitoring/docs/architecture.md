@@ -191,7 +191,7 @@ The persistent state of the stack lives in bind-mounted directories on each host
 
 ```
 /opt/monitoring/
-├── docker-compose.yml
+├── docker-compose.yml          → /opt/home.arpa/monitoring/server/docker-compose.yml (symlink)
 ├── prometheus/
 │   ├── config/
 │   │   └── prometheus.yml
@@ -209,7 +209,11 @@ The persistent state of the stack lives in bind-mounted directories on each host
         └── config.alloy
 ```
 
-`docker-compose.yml` defines all six services (Prometheus, Loki, Grafana, Alloy, cAdvisor, node_exporter).
+`docker-compose.yml` is a symlink into `/opt/home.arpa/monitoring/server/docker-compose.yml`.
+To deploy a change: update the repo on silverhand, push, then `sudo git -C /opt/home.arpa pull` on netwatch.
+See [docs/architecture.md](../../docs/architecture.md) for the full config management pattern.
+
+It defines all six services (Prometheus, Loki, Grafana, Alloy, cAdvisor, node_exporter).
 The agents on this host run as containers in the same Compose project as the storage layer.
 
 Each component has a `config/` directory mounted read-only into its container, and a `data/` directory mounted read-write.

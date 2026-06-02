@@ -91,13 +91,19 @@ All persistent state lives under `/opt/gitea/` on `soulkiller` as bind mounts:
 
 ```
 /opt/gitea/
-├── docker-compose.yml
-├── .env                        # secrets (not committed)
+├── docker-compose.yml          → /opt/home.arpa/gitea/docker-compose.yml (symlink)
+├── .env                        # secrets (not committed, root-owned)
 ├── data/                       # git repos (bare), LFS objects, attachments
 ├── config/                     # app.ini and Gitea config files
 ├── postgres/                   # PostgreSQL data files
 └── runner/                     # act_runner registration state and job workspace
+
+/opt/home.arpa/                 # clone of the home.arpa repo (HTTPS)
 ```
+
+`docker-compose.yml` is a symlink into the repo clone.
+To deploy a change: update the repo on silverhand, push, then `sudo git -C /opt/home.arpa pull` on soulkiller.
+See [docs/architecture.md](../../docs/architecture.md) for the full config management pattern.
 
 `data/` grows over time.
 Every git object is stored as a bare repository under `data/repositories/`.

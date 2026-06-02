@@ -124,6 +124,42 @@ flowchart TB
     class DEVSTEM,K3S hostlabel;
 ```
 
+## Config management
+
+Service config files on each VM are symlinked from a clone of this repo rather than managed as standalone files.
+This prevents the live config from drifting silently away from what is in version control.
+
+### Pattern
+
+On any VM that owns a service:
+
+```
+/opt/home.arpa/          ← clone of this repo (HTTPS, read-only)
+/opt/<service>/
+├── docker-compose.yml   → /opt/home.arpa/<component>/docker-compose.yml  (symlink)
+├── .env                 ← secrets, root-owned, never committed
+└── ...                  ← data dirs, bind-mounted into containers
+```
+
+### VMs with this set up
+
+| Host | Repo clone | Symlinked file |
+|------|-----------|----------------|
+| `soulkiller` | `/opt/home.arpa` | `/opt/gitea/docker-compose.yml` |
+| `netwatch` | `/opt/home.arpa` | `/opt/monitoring/docker-compose.yml` |
+
+### Deploying a config change
+
+```bash
+# On the relevant VM (as sysadmin):
+sudo git -C /opt/home.arpa pull
+
+# If docker-compose.yml changed, recreate affected services:
+sudo docker compose -f /opt/<service>/docker-compose.yml up -d
+```
+
+The `.env` file is never touched by a pull — it lives outside the repo and must be updated manually if new variables are added.
+
 ## State and storage
 
 All persistent state lives in bind-mounted directories on each host.
