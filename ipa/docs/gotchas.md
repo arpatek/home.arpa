@@ -214,12 +214,17 @@ sudo systemctl restart sssd
 ```
 
 *Local user shadowing IPA user (UID mismatch).*
-On k3s worker nodes, a local `arpatek` user with UID 1000 was present in `/etc/passwd`. Because `nsswitch.conf` lists `files` before `sss`, this local user takes precedence over the IPA user (UID 1479800005). The symptom is `id arpatek` returning UID 1000 instead of 1479800005. SSH still works because `sss_ssh_authorizedkeys` serves IPA keys, but the session runs as the local UID, breaking any UID-dependent permissions.
+On k3s worker nodes, a local `arpatek` user with UID 1002 was present in `/etc/passwd` (created by cloud-init at provisioning time). Because `nsswitch.conf` lists `files` before `sss`, this local user takes precedence over the IPA user (UID 104400004). The symptom is `id arpatek` returning UID 1002 instead of 104400004. SSH still works because `sss_ssh_authorizedkeys` serves IPA keys, but the session runs as the local UID, breaking any UID-dependent permissions. `sudo` fails with `sudo: you do not exist in the passwd database` because the running UID (1002) no longer exists after the local entry is removed.
 
-Fix: remove the local user entry directly from the system files (standard `userdel` fails when the user has an active session):
+Fix: SSH as the `sysadmin` local user (not as arpatek), then remove the shadow entry and fix ownership:
 ```bash
+ssh -i ~/.ssh/<host>.key -o IdentitiesOnly=yes sysadmin@<host>.home.arpa
 sudo sed -i '/^arpatek:/d' /etc/passwd /etc/shadow /etc/group
+sudo chown -R 104400004:104400004 /home/arpatek
+sudo rm -rf /var/lib/sss/db/*.ldb /var/lib/sss/mc/* && sudo systemctl restart sssd
 ```
+
+After `systemctl restart sssd`, wait a few seconds before verifying — SSSD takes a moment to rebuild its cache. If `id arpatek` still returns the wrong UID after the fix, check for stale SSH ControlMaster sockets (see below).
 
 *`sudo userdel` fails with active session.*
 If an SSH session exists for the user being deleted, `userdel` returns an error. Editing `/etc/passwd` directly (as above) is the workaround.
@@ -340,3 +345,32 @@ I assumed SSSD's host key serving was port-aware.
 It is not — SSSD associates one key per host entry in LDAP, regardless of how many SSH-speaking services run on that host.
 
 > This gotcha is also documented in [gitea/docs/gotchas.md](../../gitea/docs/gotchas.md), where the root cause is described from the Gitea side.
+
+---
+
+## SSH ControlMaster sockets persist stale UID across fixes
+
+**Symptom.**
+After removing a local shadow user, fixing SSSD cache, and chowning the home directory, `id` inside an SSH session still shows the old UID (e.g. 1002 with no username). Running `getent passwd arpatek` from within the same session returns the correct IPA UID (104400004). The discrepancy makes the session look broken even after all fixes are applied.
+
+**Cause.**
+`~/.ssh/config` on the client has `ControlMaster auto` with a `ControlPath` and `ControlPersist` timeout. The first SSH connection to a host creates a persistent master socket. All subsequent connections to that host reuse the master's session — including its UID — rather than opening new sessions. If the first connection was established while the local shadow user (uid=1002) existed, all later connections inherit uid=1002 regardless of what the user databases now say.
+
+**Fix.**
+Kill or remove the stale socket file:
+
+```bash
+# Check for active sockets
+ls ~/.ssh/cm-*
+
+# Close a specific socket
+ssh -O exit -S ~/.ssh/cm-arpatek@<host>.home.arpa:<port> arpatek@<host>.home.arpa
+
+# If the socket file is stale (master process already dead)
+rm ~/.ssh/cm-arpatek@<host>.home.arpa:22
+```
+
+The next `ssh` connection will create a fresh master socket with the correct UID.
+
+**Broken assumption.**
+I assumed each `ssh` command opened a fresh connection and got a fresh UID assignment. With `ControlMaster auto`, that's only true for the first connection after the socket is created or expires.
