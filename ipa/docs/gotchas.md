@@ -290,6 +290,12 @@ Use the `rm -rf` + `systemctl restart sssd` approach instead — it is equivalen
 
 After the SSSD restart, verify with `id arpatek` that the new UID is returned before relying on sudo or other UID-dependent operations.
 
+**Clear SSSD cache on every enrolled host after any user deletion/recreation.**
+SSH public key lookup (`sss_ssh_authorizedkeys`) tolerates stale SSSD cache — SSH will still work even after a user is deleted and recreated in IPA.
+`sudo` does a full `getpwnam()` lookup and will fail with `sudo: you do not exist in the passwd database` if SSSD hasn't picked up the new user entry.
+This makes the breakage non-obvious: the user can SSH in but cannot sudo.
+After any IPA user deletion/recreation, clear the SSSD cache on all enrolled hosts, not just the ones you tested on.
+
 **Check ID ranges before recreating with an explicit UID.**
 
 ```bash
