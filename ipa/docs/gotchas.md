@@ -229,6 +229,69 @@ I assumed `ipa-restore` was designed to handle hostname changes if the backup fi
 
 ---
 
+## User UID outside IPA ID range causes kinit to fail with Generic error
+
+**Symptom.**
+`kinit arpatek` returns `Generic error (see e-text) while getting initial credentials` after successful password entry.
+SPAKE pre-authentication succeeds (password is correct), but the KDC returns the error during the `handle_authdata` phase.
+The KDC log on `mikoshi` shows:
+
+```
+AS_REQ : handle_authdata (2)
+AS_REQ ... HANDLE_AUTHDATA: arpatek@HOME.ARPA for krbtgt/HOME.ARPA@HOME.ARPA, No such file or directory
+```
+
+SSH key authentication still works. Only `kinit` (and anything that needs a Kerberos ticket) fails.
+Attempts to fix by clearing `krbExtraData`, setting `krbPasswordExpiration`, restarting `krb5kdc`, or deleting and recreating the user with the same UID all reproduce the same error.
+
+**Cause.**
+FreeIPA's KDC backend (`ipa-kdb`) generates a PAC (Privilege Attribute Certificate) during the `handle_authdata` phase of every AS request.
+PAC generation requires a SID for the user.
+SIDs are derived from the user's UID relative to the configured ID range.
+If the UID falls outside all configured ID ranges, no SID can be generated and `ipa-kdb` returns `No such file or directory`, which the KDC surfaces as `KDC_ERR_GENERIC`.
+
+This happens when a user is recreated with a UID from a previous IPA installation whose ID range no longer exists.
+When `ipa user-add` is run with an explicit `--uid` that is outside the current range, IPA warns:
+
+```
+WARNING: User 'arpatek', with UID Number '1479800005' is out of all ID Ranges, 'SID' will not be correctly generated.
+```
+
+This warning is the exact indicator of the problem. Do not ignore it.
+
+**Fix.**
+Delete the user and recreate without specifying `--uid`.
+IPA will auto-assign a UID within the current ID range, SID generation will succeed, and `kinit` will work.
+
+```bash
+ipa user-del arpatek
+ipa user-add arpatek --first=Juan --last=Garcia --homedir=/home/arpatek --shell=/bin/bash
+```
+
+After recreation, fix ownership of the user's home directory on all enrolled hosts using the new numeric UID (check with `ipa user-show arpatek | grep UID`):
+
+```bash
+sudo chown -R <new-uid>:<new-uid> /home/arpatek
+sudo rm -rf /var/lib/sss/db/*.ldb /var/lib/sss/mc/*
+sudo systemctl restart sssd
+```
+
+**Check ID ranges before recreating with an explicit UID.**
+
+```bash
+ipa idrange-find
+```
+
+The primary local range is shown as `First Posix ID` + `Number of IDs`.
+Any `--uid` passed to `ipa user-add` must fall within this range.
+
+**Broken assumption.**
+I assumed `kinit` failure was always a password or must-change issue.
+The real cause was a UID outside the ID range — a consequence of the IPA reinstall creating a new ID range while the user was recreated with an old UID.
+The `Generic error (see e-text)` from kinit gives no hint of this; the KDC log is required to diagnose it.
+
+---
+
 ## SSSD serves host keys by hostname, not by port
 
 **Symptom.**
