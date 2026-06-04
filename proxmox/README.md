@@ -46,8 +46,8 @@ All VMs attach to `vmbr0` and receive IPs from Pi-hole DHCP or via cloud-init st
 | 103  | erebus     | running  | 2     | 4GB    | 100GB  | 10.33.111.103   |
 | 104  | sandevistan     | running  | 2     | 4GB    | 100GB  | 10.33.111.104   |
 | 105  | kerenzikov     | running  | 2     | 4GB    | 100GB  | 10.33.111.105   |
-| 200  | drone-01            | stopped  | 2     | 4GB    | 64GB   | 10.33.111.200   |
-| 201  | drone-02          | stopped  | 2     | 4GB    | 64GB   | 10.33.111.201   |
+| 200  | gonk-01             | stopped  | 2     | 4GB    | 64GB   | 10.33.111.200   |
+| 201  | gonk-02             | stopped  | 2     | 4GB    | 64GB   | 10.33.111.201   |
 | 9000 | debian-13-cloud       | template | —     | —      | 3GB    | —               |
 
 ## Repository layout

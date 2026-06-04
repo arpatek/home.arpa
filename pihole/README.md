@@ -100,8 +100,8 @@ These back-fill coverage for non-enrolled devices that don't use FreeIPA's BIND.
 | `ctrl-node.home.arpa`       | `10.33.111.20`  |
 | `mizutani.home.arpa       | `10.33.111.22``  |
 | `malorian.home.arpa       | `10.33.111.11``  |
-| `drone-01.home.arpa`      | `10.33.111.200` |
-| `drone-02.home.arpa`    | `10.33.111.201` |
+| `gonk-01.home.arpa`       | `10.33.111.200` |
+| `gonk-02.home.arpa`       | `10.33.111.201` |
 | `wg-malorian.home.arpa    | `10.10.10.10``   |
 | `wg-uplink.home.arpa      | `10.10.10.11``   |
 | `wg-dataslab.home.arpa    | `10.10.10.12``   |

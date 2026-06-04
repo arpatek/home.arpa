@@ -18,8 +18,8 @@
 | `sandevistan` | `10.33.111.104` | static, set via cloud-init |
 | `kerenzikov` | `10.33.111.105` | static, set via cloud-init |
 | `netrunner` | `10.33.111.141` | static |
-| `drone-01` | `10.33.111.200` | DHCP reservation, VM normally stopped |
-| `drone-02` | `10.33.111.201` | DHCP reservation, VM normally stopped |
+| `gonk-01` | `10.33.111.200` | DHCP reservation, reprovisioned as needed |
+| `gonk-02` | `10.33.111.201` | DHCP reservation, reprovisioned as needed |
 
 ## DNS
 
