@@ -22,3 +22,40 @@ spec:
                 name: arpatek-dev
                 port:
                   number: 8000
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: www-redirect
+  namespace: default
+spec:
+  redirectRegex:
+    regex: "^https?://www\\.arpatek\\.dev(.*)"
+    replacement: "https://arpatek.dev${1}"
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: arpatek-dev-www
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: default-www-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - www.arpatek.dev
+      secretName: arpatek-dev-tls
+  rules:
+    - host: www.arpatek.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: arpatek-dev
+                port:
+                  number: 8000

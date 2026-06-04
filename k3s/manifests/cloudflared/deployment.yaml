@@ -16,6 +16,10 @@ data:
         service: http://traefik.kube-system.svc.cluster.local:80
         originRequest:
           httpHostHeader: arpatek.dev
+      - hostname: www.arpatek.dev
+        service: http://traefik.kube-system.svc.cluster.local:80
+        originRequest:
+          httpHostHeader: www.arpatek.dev
       - service: http_status:404
 ---
 # ──[ Deployment: cloudflared ]───────────────────────────────────────────────
