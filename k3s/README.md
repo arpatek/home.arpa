@@ -245,8 +245,8 @@ chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 
 ```bash
 kubectl get nodes
-NAME                          STATUS   ROLES           AGE   VERSION
-erebus.home.arpa   Ready    control-plane   —     v1.35.4+k3s1
-sandevistan.home.arpa   Ready    worker          —     v1.35.4+k3s1
-kerenzikov.home.arpa   Ready    worker          —     v1.35.4+k3s1
+NAME          STATUS   ROLES           AGE   VERSION
+erebus        Ready    control-plane   —     v1.35.4+k3s1
+kerenzikov    Ready    <none>          —     v1.35.4+k3s1
+sandevistan   Ready    <none>          —     v1.35.4+k3s1
 ```
