@@ -247,6 +247,6 @@ chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 kubectl get nodes
 NAME          STATUS   ROLES           AGE   VERSION
 erebus        Ready    control-plane   —     v1.35.4+k3s1
-kerenzikov    Ready    <none>          —     v1.35.4+k3s1
-sandevistan   Ready    <none>          —     v1.35.4+k3s1
+kerenzikov    Ready    worker          —     v1.35.4+k3s1
+sandevistan   Ready    worker          —     v1.35.4+k3s1
 ```
