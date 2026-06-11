@@ -11,7 +11,7 @@
 | Sockets          | 1                                                     |
 | Cores            | 2                                                     |
 | CPU Type         | host (physical CPU passthrough)                       |
-| RAM              | 4096 MB                                               |
+| RAM              | 3072 MB                                               |
 | Disk             | 100GB LVM (VirtIO SCSI, iothread enabled, discard=on) |
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
 | OS               | Debian 13.3 (Trixie)                                  |
@@ -29,7 +29,7 @@
 | Sockets          | 1                                                     |
 | Cores            | 2                                                     |
 | CPU Type         | host (physical CPU passthrough)                       |
-| RAM              | 4096 MB                                               |
+| RAM              | 3072 MB                                               |
 | Disk             | 100GB LVM (VirtIO SCSI, iothread enabled, discard=on) |
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
 | OS               | Debian 13.3 (Trixie)                                  |
@@ -47,7 +47,7 @@
 | Sockets          | 1                                                     |
 | Cores            | 2                                                     |
 | CPU Type         | host (physical CPU passthrough)                       |
-| RAM              | 4096 MB                                               |
+| RAM              | 3072 MB                                               |
 | Disk             | 100GB LVM (VirtIO SCSI, iothread enabled, discard=on) |
 | Network          | VirtIO, bridge vmbr0, Proxmox firewall enabled        |
 | OS               | Debian 13.3 (Trixie)                                  |

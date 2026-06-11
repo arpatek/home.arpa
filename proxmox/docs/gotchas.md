@@ -45,3 +45,28 @@ apt update && apt dist-upgrade
 I assumed a fresh Proxmox install would be usable without a subscription.
 It is — but not without first switching the package repository.
 The enterprise repo is the default and must be explicitly replaced.
+
+## Directory storage over a CIFS subdir mount reports wrong capacity and has no offline guard
+
+**Symptom.**
+`pvesm status` shows `nas-isos` with the same total/used as the root filesystem instead of the NAS share's capacity.
+Worse: if the CIFS mount drops, the storage stays "active" — Proxmox sees an empty directory on the root disk and silently writes ISO uploads there.
+
+**Cause.**
+`nas-isos` is a `dir` storage at `/mnt/nas-isostore`, but the CIFS share (`//netrunner.home.arpa/NAS/ISOs`) is mounted one level deeper, at `/mnt/nas-isostore/template/iso` — the subdir Proxmox uses for ISO content.
+Directory storage measures capacity at the storage root, which lives on the root filesystem.
+And without `is_mountpoint`, Proxmox has no way to know the path is supposed to be a mount — a missing mount looks identical to an empty storage.
+
+**Fix.**
+`is_mountpoint` accepts an explicit path, so it can point at the subdir where the mount actually lives:
+
+```bash
+pvesm set nas-isos --is_mountpoint /mnt/nas-isostore/template/iso
+```
+
+With this set, Proxmox marks the storage inactive whenever the mount is down and refuses to write to it.
+Capacity reporting stays wrong (still measured at the storage root) — cosmetic, tolerated.
+
+**Broken assumption.**
+I assumed an active directory storage implied its backing mount was healthy.
+Proxmox treats a `dir` storage as just a path — mounted, unmounted, it doesn't care unless `is_mountpoint` tells it to check.

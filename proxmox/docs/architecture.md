@@ -28,19 +28,24 @@ Proxmox uses QEMU with KVM acceleration — QEMU handles device emulation, KVM h
 ## Storage
 
 Proxmox supports multiple storage backends simultaneously.
-This host uses two:
+This host uses four:
 
 **`local` (directory)** — a standard filesystem directory (`/var/lib/vz/`) on the WD Black 2TB M.2.
-Used for ISO images, container templates, and Proxmox's own state.
-Simple, no special features.
+Used for cloud-init snippets and container templates.
+Content types are restricted to `snippets,vztmpl` so ISOs and backups can't silently accumulate on the system disk.
 
 **`local-lvm` (LVM thin pool)** — a thin-provisioned LVM pool on the same WD Black 2TB M.2.
 All VM disks live here.
 Thin provisioning means a VM with a 100GB disk allocation only consumes actual written data — a freshly created VM uses ~3GB of physical space regardless of its declared disk size.
 Supports snapshots and `discard` (TRIM) for reclaiming freed space.
+Guests must run `fstrim` (or have `fstrim.timer` enabled) for freed blocks to return to the pool.
 
-**`data` (directory)** — a standard filesystem directory on the WD Blue 500GB SSD.
-Secondary storage, available for large files, backups, or additional ISOs.
+**`backups` (directory)** — a standard filesystem directory on the WD Blue 500GB SSD.
+Dedicated vzdump backup target — a separate physical drive from the VM disks, so a failure of the M.2 doesn't take the backups with it.
+A weekly backup job covers all prod VMs (see [README](../README.md)).
+
+**`nas-isos` (directory)** — ISO storage backed by the NAS share on `netrunner`.
+Keeps installer images off the hypervisor's local disks.
 
 ## Networking
 

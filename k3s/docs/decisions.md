@@ -70,8 +70,9 @@ Common in small homelab clusters.
 
 **Why control-plane-only.**
 
-The two workers have 4GB RAM each — 8GB total workload capacity.
-The current workload (`arpatek.dev` and supporting services) fits comfortably in that space.
+The two workers have 3GB RAM each — 6GB total workload capacity.
+The current workload (`arpatek.dev` and supporting services) fits comfortably in that space — measured usage per worker is ~1.5GB including the OS.
+Nodes were originally provisioned at 4GB and trimmed to 3GB once real usage was known, freeing headroom on the hypervisor for the gonk dev VMs.
 
 The control-plane-only pattern is what production Kubernetes environments use.
 Running the cluster this way means the operational model (master = control plane, workers = workloads) is accurate and transferable.

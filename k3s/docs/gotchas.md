@@ -197,3 +197,30 @@ Access the web UI directly at `https://mikoshi.home.arpa/ipa/ui/`, which is reac
 **Broken assumption.**
 I assumed overriding the Host header would be sufficient to make the proxy transparent.
 FreeIPA's authentication and session management are built around a single canonical hostname in ways that go beyond the Host header — cookie domains, CSRF tokens, and Kerberos service principals are all tied to `mikoshi.home.arpa`.
+
+## Debian cloud image ships without qemu-guest-agent
+
+**Symptom.**
+`qm shutdown` on a cluster node times out with `QEMU Guest Agent is not running - guest-ping failed` before falling back to ACPI.
+vzdump snapshot backups skip the `fs-freeze` step, producing crash-consistent rather than filesystem-consistent backups.
+
+**Cause.**
+The VM config has `agent: enabled=1`, but that only attaches the virtio-serial device on the host side.
+The Debian genericcloud image does not include the `qemu-guest-agent` package, so nothing in the guest answers.
+An ISO install pulls the agent in via tasksel defaults; the cloud image does not.
+
+**Fix.**
+On each node:
+
+```bash
+sudo apt install -y qemu-guest-agent
+```
+
+The Debian unit has no `[Install]` section — it is udev-activated when the virtio-serial device appears at boot, so `systemctl enable` is a no-op and unnecessary.
+After installing on a running node, start it once manually (`systemctl start qemu-guest-agent`); every boot after that is automatic.
+
+Verify from the hypervisor: `qm agent <vmid> ping` — silent exit means the agent is alive.
+
+**Broken assumption.**
+I assumed `agent: enabled=1` in the Proxmox config meant the guest agent worked.
+That flag is the host half — the guest half has to be installed in the image, and cloud images ship minimal.
