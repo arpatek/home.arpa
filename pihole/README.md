@@ -25,7 +25,7 @@ Non-enrolled devices (phones, laptops, IoT) use Pi-hole as their sole DNS server
 ```
 pihole/
 ├── README.md                   # this file — config reference and DNS record inventory
-├── pihole.toml                 # Pi-hole v6 configuration (non-default values marked ### CHANGED)
+├── pihole.toml.example         # Pi-hole v6 configuration (non-default values marked ### CHANGED)
 └── docs/
     ├── architecture.md         # DNS resolution flow and network role
     ├── decisions.md            # design choices and rationale
@@ -64,9 +64,11 @@ All devices on the network receive an IP — unknown clients are not ignored.
 
 ### DNS settings
 
-- Local domain: `home.arpa` — never forwarded upstream
+- `home.arpa` forward queries and `10.33.111.0/24` reverse lookups delegated to FreeIPA (`10.33.111.100`) via `dns.revServers`
+- `10.10.10.0/24` (WireGuard) reverse lookups answered locally
 - Private reverse lookups not forwarded upstream (`bogusPriv`)
-- Reverse DNS for both `10.33.111.0/24` and `10.10.10.0/24` answered directly by Pi-hole using its local DNS records
+- `local=/local/` in `misc.dnsmasq_lines` — mDNS domain answered immediately (prevents 5–20s upstream timeout)
+- `dhcp.multiDNS = false` — mDNS DHCP registration disabled
 - Listening mode: `ALL` — serves both LAN and WireGuard clients on `10.10.10.0/24`
 - NTP: `us.pool.ntp.org`
 
@@ -76,34 +78,24 @@ Accessible at `https://netrunner.home.arpa/admin/` on port 443.
 
 ### Blocklists
 
-| List                                                                                          | Purpose                |
-| --------------------------------------------------------------------------------------------- | ---------------------- |
-| [StevenBlack/hosts](https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts)         | Basic ad blocking      |
-| [Hagezi Pro](https://gitlab.com/hagezi/mirror/-/raw/main/dns-blocklists/adblock/pro.txt)      | Extended blocking      |
-| [Hagezi NSFW](https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/nsfw.txt)  | NSFW content filtering |
+| List                                                                                                  | Purpose                   |
+| ----------------------------------------------------------------------------------------------------- | ------------------------- |
+| [Hagezi Pro](https://gitlab.com/hagezi/mirror/-/raw/main/dns-blocklists/adblock/pro.txt)             | Ad and tracker blocking   |
+| [Hagezi NSFW](https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/nsfw.txt)         | NSFW content filtering    |
+| [Hagezi TIF](https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/tif.txt)           | Threat intelligence feeds |
 
 ### Local DNS records
 
-Static DNS records defined in Pi-hole for all lab hosts.
-These back-fill coverage for non-enrolled devices that don't use FreeIPA's BIND.
+Pi-hole no longer holds `home.arpa` records.
+All forward and reverse lookups for the local domain are delegated to FreeIPA via `dns.revServers`.
 
-| Hostname                    | IP              |
-| --------------------------- | --------------- |
-| `gateway.home.arpa`         | `10.33.111.1`   |
-| `blackwall.home.arpa`         | `10.33.111.44`  |
-| `mikoshi.home.arpa`      | `10.33.111.100` |
-| `soulkiller.home.arpa`      | `10.33.111.101` |
-| `netwatch.home.arpa`      | `10.33.111.102` |
-| `erebus.home.arpa` | `10.33.111.103` |
-| `sandevistan.home.arpa` | `10.33.111.104` |
-| `kerenzikov.home.arpa` | `10.33.111.105` |
-| `ctrl-node.home.arpa`       | `10.33.111.20`  |
-| `mizutani.home.arpa       | `10.33.111.22``  |
-| `malorian.home.arpa       | `10.33.111.11``  |
-| `gonk-01.home.arpa`       | `10.33.111.200` |
-| `gonk-02.home.arpa`       | `10.33.111.201` |
-| `wg-malorian.home.arpa    | `10.10.10.10``   |
-| `wg-uplink.home.arpa      | `10.10.10.11``   |
-| `wg-dataslab.home.arpa    | `10.10.10.12``   |
-| `_kerberos._tcp.home.arpa`  | `10.33.111.100` |
-| `_ldap._tcp.home.arpa`      | `10.33.111.100` |
+The only local records in `dns.hosts` are six `arpatek.dev` split-horizon entries that resolve public subdomains to the internal k3s worker IP (`10.33.111.104`) rather than the public address.
+
+| Hostname            | IP              |
+| ------------------- | --------------- |
+| `git.arpatek.dev`   | `10.33.111.104` |
+| `man.arpatek.dev`   | `10.33.111.104` |
+| `gf.arpatek.dev`    | `10.33.111.104` |
+| `pm.arpatek.dev`    | `10.33.111.104` |
+| `pi.arpatek.dev`    | `10.33.111.104` |
+| `pve.arpatek.dev`   | `10.33.111.104` |
