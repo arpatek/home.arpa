@@ -65,4 +65,4 @@ Performed 2026-05-31. Key steps and gotchas:
 - **CIFS/SMB case-only renames** fail from the client — always SSH into netrunner for those.
 - **Pi-hole local DNS** (`/etc/pihole/pihole.toml`) is separate from FreeIPA DNS and must be updated independently. Live config is gitignored; use `pihole reloaddns` after changes.
 - **SSH too many authentication failures** — connect with `-i ~/.ssh/<host>.key -o IdentitiesOnly=yes` when the ssh-agent has many keys cached.
-- **IPA server rename** (`mikoshi`) is pending — requires `ipa-backup`, uninstall, hostname change, reinstall, and restore. All clients will need their `/etc/ipa/default.conf`, `/etc/sssd/sssd.conf`, and `/etc/krb5.conf` updated to point to `mikoshi.home.arpa` afterwards.
+- **IPA server rename** (`mikoshi`, was `prod-ipa-0`) is complete. A fresh install was required — `ipa-restore` does not support hostname changes (keytabs are binary, can't be patched). All clients were unenrolled and re-enrolled against the new CA. See [ipa/docs/gotchas.md](../ipa/docs/gotchas.md) for the full account.
