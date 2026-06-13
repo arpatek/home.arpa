@@ -86,17 +86,33 @@ The added complexity of operating Unbound isn't worth the marginal improvement i
 
 ## Blocklist selection
 
-**Decision.** Three blocklists: StevenBlack/hosts, Hagezi Pro, and Hagezi NSFW.
+**Decision.** Three blocklists: Hagezi Pro, Hagezi NSFW, and Hagezi TIF.
 
-StevenBlack/hosts is the de facto standard baseline for ad blocking on Pi-hole.
-Well-maintained, minimal false positives, wide community use.
-
-Hagezi Pro extends coverage with a broader set of trackers and ad domains.
-Hagezi's lists are known for low false positive rates relative to their coverage.
+Hagezi Pro is a comprehensive tracker and ad blocker with a reputation for low false positive rates relative to its coverage.
+It replaced StevenBlack/hosts as the baseline — better maintained, broader coverage, and the Hagezi lists are consistent in quality across tiers.
 
 Hagezi NSFW adds content filtering for adult content.
-Applied network-wide for consistent coverage across all devices on the network.
+Applied network-wide for consistent coverage across all devices.
 
-The lists are layered deliberately.
-StevenBlack handles the baseline, Hagezi Pro extends it, Hagezi NSFW adds the content filtering layer.
+Hagezi TIF (Threat Intelligence Feeds) adds blocking for known malicious domains.
+Low false positive risk for a private homelab; useful additional coverage without the operational overhead of running IDS/IPS.
+
+Note: Hagezi Pro deliberately does not block ad-network apex domains like `doubleclick.net` — only subdomains — to avoid collateral damage to non-ad traffic on the same domain.
+This is expected behavior, not a gap.
+
 Adding more lists increases the risk of false positives without proportional coverage gains.
+StevenBlack was removed when Hagezi Pro was added — the coverage overlap was high and StevenBlack's deletion path from Pi-hole requires manual database cleanup (no `ON DELETE CASCADE` on `gravity`/`antigravity`).
+
+## Delegating home.arpa to FreeIPA
+
+**Decision.** Pi-hole does not hold any `home.arpa` DNS records.
+All forward and reverse lookups for the local domain are delegated to FreeIPA's BIND via `dns.revServers`.
+
+**Why.**
+The previous approach maintained a copy of all lab host records in `dns.hosts` alongside the authoritative copy in FreeIPA's LDAP.
+That duplication caused drift: stale entries in Pi-hole shadowed the live records in FreeIPA, producing incorrect resolutions when hostnames were renamed.
+Fake A records for `_kerberos._tcp.home.arpa` and `_ldap._tcp.home.arpa` were particularly harmful — they broke SRV record lookup for IPA client enrollment.
+
+Centralizing authority in FreeIPA means any change to a host record is immediately visible everywhere without a second update step.
+`dns.revServers` handles the delegation cleanly: Pi-hole forwards the entire `home.arpa` zone and `10.33.111.0/24` reverse zone to mikoshi.
+The split-horizon `arpatek.dev` entries remain in `dns.hosts` — those are Pi-hole's own responsibility.

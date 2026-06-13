@@ -32,22 +32,25 @@ flowchart LR
     subgraph CLIENTS["Network clients"]
         NONENROLLED["non-enrolled devices\n(phones, IoT, laptops)"]
         WGCLIENTS["WireGuard clients\n10.10.10.x"]
-        IPACLIENTS["FreeIPA clients\n(Pi-hole as upstream)"]
+        IPACLIENTS["FreeIPA clients\n(mikoshi as primary DNS)"]
     end
 
     subgraph RPI["netrunner (10.33.111.141)"]
         FTL["pihole-FTL\nDNS :53 · DHCP"]
         GRAVITY[("gravity\nblocklist DB")]
-        LOCAL[("local DNS\nrecords")]
+        LOCAL[("split-horizon\nrecords")]
         FTL --- GRAVITY
         FTL --- LOCAL
     end
 
+    FREEIPA["FreeIPA / BIND\nmikoshi (10.33.111.100)"]
     CF["Cloudflare\n1.1.1.1 / 1.0.0.1"]
 
     NONENROLLED & WGCLIENTS & IPACLIENTS -->|"query :53"| FTL
     FTL -->|"blocked"| NONENROLLED
-    FTL -->|"local record"| NONENROLLED
+    FTL -->|"arpatek.dev"| NONENROLLED
+    FTL -->|"home.arpa"| FREEIPA
+    FREEIPA -->|"response"| FTL
     FTL -->|"forward"| CF
     CF -->|"response"| FTL
 
@@ -60,7 +63,7 @@ flowchart LR
 
     class FTL core;
     class GRAVITY,LOCAL db;
-    class NONENROLLED,WGCLIENTS,IPACLIENTS,CF external;
+    class NONENROLLED,WGCLIENTS,IPACLIENTS,CF,FREEIPA external;
     class CLIENTS,RPI hostlabel;
 ```
 
@@ -68,22 +71,24 @@ flowchart LR
 2. FTL checks the query against the gravity blocklist.
    If the domain is blocked, FTL returns `NXDOMAIN` (or the configured block response) immediately — no upstream query.
 3. If not blocked, FTL checks its local DNS records.
-   `home.arpa` queries for known hosts are answered from local records.
-4. Anything else is forwarded to Cloudflare (`1.1.1.1` / `1.0.0.1`).
+   The only local records are six `arpatek.dev` split-horizon entries that resolve public subdomains to the internal k3s worker IP (`10.33.111.104`) instead of the public address.
+4. `home.arpa` forward queries and reverse lookups for `10.33.111.x` are delegated to FreeIPA (`10.33.111.100`) via `dns.revServers`.
+   FreeIPA's BIND is the authoritative nameserver for both zones and stores all records in LDAP.
+5. Anything else is forwarded to Cloudflare (`1.1.1.1` / `1.0.0.1`).
    The response is cached and returned to the client.
 
 ## Role in the network DNS hierarchy
 
 The lab has two DNS servers with distinct roles:
 
-**FreeIPA BIND** (`mikoshi`, `10.33.111.100`) — authoritative for `home.arpa`.
+**FreeIPA BIND** (`mikoshi`, `10.33.111.100`) — authoritative for `home.arpa` and `111.33.10.in-addr.arpa.`.
 IPA-enrolled hosts (all lab VMs) use FreeIPA as their primary DNS.
-FreeIPA's BIND uses Pi-hole as its upstream forwarder for queries it can't answer locally.
+FreeIPA's BIND uses Pi-hole as its upstream forwarder for queries it can't answer locally (installed with `--forwarder=10.33.111.141`).
 
-**Pi-hole** (`netrunner`, `10.33.111.141`) — DNS resolver and content filter.
+**Pi-hole** (`netrunner`, `10.33.111.141`) — DNS resolver, content filter, and DHCP server.
 Non-enrolled devices use Pi-hole as their sole DNS server.
 WireGuard clients use Pi-hole via the tunnel.
-FreeIPA-enrolled clients use Pi-hole indirectly as the upstream forwarder.
+`home.arpa` forward queries and `10.33.111.x` reverse lookups are delegated to FreeIPA via `dns.revServers`.
 
 The result: all DNS queries for anything outside `home.arpa` pass through Pi-hole's blocklist, regardless of whether the client is IPA-enrolled or not.
 

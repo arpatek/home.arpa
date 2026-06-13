@@ -127,25 +127,6 @@
   # Allowed values are:
   #     Array of custom DNS records each one in HOSTS form: "IP HOSTNAME [HOSTNAME ...]"
   hosts = [
-    "10.33.111.44 blackwall.home.arpa",
-    "10.33.111.22 mizutani.home.arpa",
-    "10.10.10.11 wg-uplink.home.arpa",
-    "10.10.10.10 wg-malorian.home.arpa",
-    "10.33.111.20 ctrl-node.home.arpa",
-    "10.33.111.200 gonk-01.home.arpa",
-    "10.33.111.201 gonk-02.home.arpa",
-    "10.10.10.12 wg-dataslab.home.arpa",
-    "10.33.111.11 malorian.home.arpa",
-    "10.33.111.100 mikoshi.home.arpa",
-    "10.33.111.100 _kerberos._tcp.home.arpa",
-    "10.33.111.100 _ldap._tcp.home.arpa",
-    "10.33.111.1 gateway.home.arpa",
-    "10.33.111.101 soulkiller.home.arpa",
-    "10.33.111.102 netwatch.home.arpa",
-    "10.33.111.103 erebus.home.arpa",
-    "10.33.111.104 sandevistan.home.arpa",
-    "10.33.111.105 kerenzikov.home.arpa",
-    "10.33.111.88 silverhand.home.arpa",
     "10.33.111.104 git.arpatek.dev",
     "10.33.111.104 man.arpatek.dev",
     "10.33.111.104 gf.arpatek.dev",
@@ -296,8 +277,7 @@
   #     - "<domain>": Domain used for the reverse server feature (e.g., "fritz.box")
   #     Example: "fritz.box"
   revServers = [
-    "false,10.33.111.0/24,10.33.111.1,home.arpa",
-    "false,10.10.10.0/24,10.33.111.141#55055,home.arpa"
+    "true,10.33.111.0/24,10.33.111.100,home.arpa"
   ] ### CHANGED, default = []
 
   [dns.domain]
@@ -566,7 +546,7 @@
     #
     # Allowed values are:
     #     A positive integer value
-    count = 2000 ### CHANGED, default = 1000
+    count = 1000
 
     # ... in the set interval before rate-limiting?
     #
@@ -651,7 +631,7 @@
   #
   # Allowed values are:
   #     true or false
-  multiDNS = true ### CHANGED, default = false
+  multiDNS = false ### CHANGED, default = false
 
   # Enable logging for DHCP. This will log all relevant DHCP-related activity, including,
   # e.g., all the options sent to DHCP clients and the tags used to determine them (if
@@ -1448,7 +1428,7 @@
   #
   # Allowed values are:
   #     Array of valid dnsmasq config line options
-  dnsmasq_lines = []
+  dnsmasq_lines = ["local=/local/"] ### CHANGED, default = []
 
   # Log additional information about queries and replies to pihole.log
   #
