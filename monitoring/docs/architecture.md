@@ -65,15 +65,23 @@ flowchart TB
         I_NODE[node_exporter<br/>:9100]
     end
 
+    subgraph RPI["netrunner (10.33.111.141)"]
+        direction LR
+        R_ALLOY["Alloy Agent (systemd)"]
+        R_NODE[node_exporter<br/>:9100]
+    end
+
     PROM -->|scrape| M_NODE
     PROM -->|scrape| M_CAD
     PROM -->|scrape| G_NODE
     PROM -->|scrape| G_CAD
     PROM -->|scrape| I_NODE
+    PROM -->|scrape| R_NODE
 
     M_ALLOY -.->|push| LOKI
     G_ALLOY -.->|push| LOKI
     I_ALLOY -.->|push| LOKI
+    R_ALLOY -.->|push| LOKI
 
     GRAF -->|query| PROM
     GRAF -->|query| LOKI
@@ -87,9 +95,9 @@ flowchart TB
     classDef hostlabel fill:#d4a574,stroke:#000000,color:#000000,stroke-width:1.5px;
     class PROM,LOKI core;
     class GRAF viz;
-    class M_ALLOY,G_ALLOY,I_ALLOY agent;
-    class M_NODE,M_CAD,G_NODE,G_CAD,I_NODE exporter;
-    class MON,GIT,IPA hostlabel;
+    class M_ALLOY,G_ALLOY,I_ALLOY,R_ALLOY agent;
+    class M_NODE,M_CAD,G_NODE,G_CAD,I_NODE,R_NODE exporter;
+    class MON,GIT,IPA,RPI hostlabel;
 ```
 
 The shading distinguishes component roles.
@@ -119,6 +127,7 @@ The scrape targets in this stack are:
 - `soulkiller.home.arpa:9100` — remote node_exporter
 - `soulkiller.home.arpa:8080` — remote cAdvisor
 - `mikoshi.home.arpa:9100` — remote node_exporter
+- `netrunner.home.arpa:9100` — remote node_exporter (Raspberry Pi)
 
 The scrape interval and timeout are configured per job in `server/prometheus/prometheus.yml`.
 All current jobs use the global defaults.
@@ -129,10 +138,10 @@ Alloy reads logs locally (from Docker container stdout files, or from journald) 
 The push endpoint is `http://netwatch.home.arpa:3100/loki/api/v1/push`.
 
 On Docker hosts, Alloy discovers running containers automatically and tails their stdout from `/var/lib/docker/containers/<id>/<id>-json.log`.
-On the RHEL host, Alloy reads from the systemd journal directly using its `loki.source.journal` component.
+On systemd hosts (mikoshi/Rocky Linux, netrunner/Raspberry Pi OS), Alloy reads from the systemd journal directly using its `loki.source.journal` component.
 
 Each pushed log line carries labels.
-The minimum label set is `host` (set per agent — `netwatch`, `soulkiller`, `mikoshi`) and `service` or `unit` (set from container name or systemd unit).
+The minimum label set is `host` (set per agent — `netwatch`, `soulkiller`, `mikoshi`, `netrunner`) and `service` or `unit` (set from container name or systemd unit).
 These labels are what Loki indexes; the log content itself is stored as a compressed chunk and searched at query time.
 
 ### Queries: Grafana to both backends
@@ -236,6 +245,21 @@ Restarting Gitea (for an upgrade or config change) does not bounce the monitorin
 
 The `cadvisor/` directory exists from initial scaffolding but cAdvisor doesn't use a config file — it takes everything via command-line flags in the Compose file.
 The directory is harmless to keep and could be removed.
+
+### netrunner
+
+Same layout as mikoshi — native systemd, standard FHS paths:
+
+```
+/etc/alloy/config.alloy
+/etc/systemd/system/alloy.service
+/etc/systemd/system/node_exporter.service
+/usr/local/bin/alloy
+/usr/local/bin/node_exporter
+```
+
+Ships journal logs to Loki and exposes node_exporter metrics.
+No cAdvisor — no Docker on the Pi.
 
 ### mikoshi
 
