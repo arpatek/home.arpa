@@ -139,9 +139,11 @@ sudo ipa-client-install --domain=home.arpa --server=mikoshi.home.arpa \
 After enrollment, add DNS records manually:
 
 ```bash
-ipa dnsrecord-add home.arpa <hostname> --a-rec <ip>
-ipa dnsrecord-add 111.33.10.in-addr.arpa <last-octet> --ptr-rec <hostname>.home.arpa.
+ipa dnsrecord-add home.arpa. <hostname> --a-rec <ip> --a-create-reverse
 ```
+
+`--a-create-reverse` creates the PTR record atomically.
+Without it, the PTR is silently skipped — `--allow-sync-ptr` only fires on dynamic updates, not static CLI adds.
 
 ## Realm configuration
 
@@ -157,9 +159,10 @@ ipa dnsrecord-add 111.33.10.in-addr.arpa <last-octet> --ptr-rec <hostname>.home.
 
 ## DNS
 
-FreeIPA's integrated BIND serves as the primary DNS authority for the `home.arpa` domain.
+FreeIPA's integrated BIND serves as the primary DNS authority for the `home.arpa` forward zone and the `111.33.10.in-addr.arpa.` reverse zone.
 Enrolled clients use `mikoshi` (`10.33.111.100`) as their primary DNS server.
-Pi-hole (`10.33.111.141`) serves as fallback for non-enrolled devices and upstream resolution.
+Pi-hole (`10.33.111.141`) is the resolver for non-enrolled devices; it delegates `home.arpa` forward and reverse queries to mikoshi via `dns.revServers`.
+FreeIPA's BIND uses Pi-hole as its upstream forwarder for non-`home.arpa` queries (installed with `--forwarder=10.33.111.141`).
 
 ### Forward zone
 
@@ -225,7 +228,6 @@ SSSD manages client-side identity resolution and caching on enrolled hosts.
 | kerenzikov.home.arpa | k3s worker    |
 | gonk-01.home.arpa         | Dev VM        |
 | gonk-02.home.arpa         | Dev VM        |
-| ctrl-node.home.arpa         | Control node  |
 
 ## Access control
 
