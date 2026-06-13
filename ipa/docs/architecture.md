@@ -133,6 +133,26 @@ dig _kerberos._tcp.home.arpa SRV
 dig _ldap._tcp.home.arpa SRV
 ```
 
+### Reverse zone
+
+BIND is also authoritative for `111.33.10.in-addr.arpa.` — the reverse zone for `10.33.111.0/24`.
+The zone is stored in LDAP alongside the forward zone.
+
+PTR sync is enabled (`--allow-sync-ptr=TRUE` on the `home.arpa` zone).
+When a dynamic DNS update adds an A record (e.g. from a DHCP client or `ipa-client-install`), the corresponding PTR record is created automatically.
+
+Manual A records added via `ipa dnsrecord-add` do **not** trigger sync automatically — pass `--a-create-reverse` to create the PTR at the same time:
+
+```bash
+ipa dnsrecord-add home.arpa. hostname --a-rec=10.33.111.x --a-create-reverse
+```
+
+### Pi-hole delegation
+
+Pi-hole (`netrunner`, `10.33.111.141`) delegates the entire `home.arpa` zone and `10.33.111.0/24` reverse lookups to mikoshi via `dns.revServers`.
+Non-enrolled devices on the network resolve `home.arpa` names through this delegation path without direct knowledge of FreeIPA.
+FreeIPA's BIND uses Pi-hole as its upstream forwarder for all non-local queries (configured at install time with `--forwarder=10.33.111.141`).
+
 ## On-disk layout
 
 FreeIPA's state is spread across several standard system paths on `mikoshi`:

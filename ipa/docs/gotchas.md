@@ -234,6 +234,37 @@ I assumed `ipa-restore` was designed to handle hostname changes if the backup fi
 
 ---
 
+## Manual `ipa dnsrecord-add` does not create PTR records automatically
+
+**Symptom.**
+After adding an A record with `ipa dnsrecord-add`, `dig -x 10.33.111.x` returns NXDOMAIN.
+The forward lookup works; the reverse does not.
+
+**Cause.**
+The `--allow-sync-ptr=TRUE` flag on the `home.arpa` zone enables automatic PTR sync for dynamic DNS updates (e.g. DHCP registrations and `ipa-client-install` enrollments).
+It does **not** apply to manually issued `ipa dnsrecord-add` commands.
+The CLI treats those as static record additions, not dynamic updates, so no PTR sync is triggered.
+
+**Fix.**
+Pass `--a-create-reverse` when adding the A record:
+
+```bash
+ipa dnsrecord-add home.arpa. hostname --a-rec=10.33.111.x --a-create-reverse
+```
+
+To backfill a PTR for an existing A record, add it to the reverse zone directly:
+
+```bash
+ipa dnsrecord-add 111.33.10.in-addr.arpa. x --ptr-rec=hostname.home.arpa.
+```
+
+**Broken assumption.**
+I assumed `--allow-sync-ptr=TRUE` meant any A record addition would automatically get a PTR.
+The sync only fires on dynamic updates, not on static `ipa dnsrecord-add` calls.
+Always pass `--a-create-reverse` when adding host A records manually.
+
+---
+
 ## User UID outside IPA ID range causes kinit to fail with Generic error
 
 **Symptom.**
