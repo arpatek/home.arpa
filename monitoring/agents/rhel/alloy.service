@@ -11,6 +11,7 @@ Type=simple
 ExecStart=/usr/local/bin/alloy run \
   --server.http.listen-addr=0.0.0.0:12345 \
   --storage.path=/var/lib/alloy/data \
+  --disable-reporting \
   /etc/alloy/config.alloy
 Restart=on-failure
 RestartSec=5s
