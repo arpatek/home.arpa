@@ -226,8 +226,8 @@ SSSD manages client-side identity resolution and caching on enrolled hosts.
 | erebus.home.arpa | k3s master    |
 | sandevistan.home.arpa | k3s worker    |
 | kerenzikov.home.arpa | k3s worker    |
-| gonk-01.home.arpa         | Dev VM        |
-| gonk-02.home.arpa         | Dev VM        |
+| delamain.home.arpa       | IaC control (planned) |
+| errata.home.arpa         | Dev VM        |
 
 ## Access control
 

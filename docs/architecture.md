@@ -23,6 +23,7 @@ This is a single-node homelab.
 | `erebus` | `10.33.111.103` | Debian 13.3 | k3s control plane |
 | `sandevistan` | `10.33.111.104` | Debian 13.3 | k3s worker |
 | `kerenzikov` | `10.33.111.105` | Debian 13.3 | k3s worker |
+| `delamain` | `10.33.111.106` | Debian 13.3 (planned) | IaC control — Puppet, Ansible, Terraform |
 | `netrunner` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN + NAS |
 
 ## Services
@@ -51,6 +52,10 @@ Traefik is the ingress controller.
 cert-manager issues TLS certificates from Let's Encrypt via Cloudflare DNS-01.
 Current workloads: `arpatek.dev` (FastAPI personal site) and a Traefik proxy for `git.arpatek.dev`.
 
+**IaC control** (`delamain`, planned) — home for Puppet, Ansible, and Terraform.
+Puppet enforces configuration state across the fleet; Ansible orchestrates ad-hoc tasks and provisioning; Terraform manages VM lifecycle on `blackwall`.
+Not yet built.
+
 **WireGuard** — VPN server on `netrunner`.
 Provides remote access into the `10.33.111.0/24` network from anywhere.
 Connected clients use Pi-hole for DNS, matching LAN behavior.
@@ -72,6 +77,9 @@ All VMs
 Monitoring (netwatch)
   └── All hosts — Prometheus scrapes metrics, Loki receives logs
   └── netrunner — node_exporter (:9100) + Alloy (journald → Loki)
+
+Config management (delamain) [planned]
+  └── All VMs — Puppet enforces state, Ansible orchestrates, Terraform provisions
 ```
 
 ## Diagram

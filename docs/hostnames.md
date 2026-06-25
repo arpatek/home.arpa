@@ -28,8 +28,8 @@ WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g.
 | `sandevistan` | `10.33.111.104` | `prod-k3s-worker-0` | k3s worker |
 | `kerenzikov` | `10.33.111.105` | `prod-k3s-worker-1` | k3s worker |
 | `netrunner` | `10.33.111.141` | `netrunner-rpi` | Pi-hole + WireGuard + NAS |
-| `gonk-01` | `10.33.111.200` | `drone-01` | Dev VM — reprovisioned as needed |
-| `gonk-02` | `10.33.111.201` | `drone-02` | Dev VM — reprovisioned as needed |
+| `errata` | `10.33.111.200` | `gonk-01` | Dev VM — reprovisioned as needed |
+| `delamain` | `10.33.111.106` | — | IaC control host — Puppet, Ansible, Terraform (planned) |
 
 ### Personal devices
 

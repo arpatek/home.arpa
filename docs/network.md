@@ -18,8 +18,8 @@
 | `sandevistan` | `10.33.111.104` | static, set via cloud-init |
 | `kerenzikov` | `10.33.111.105` | static, set via cloud-init |
 | `netrunner` | `10.33.111.141` | static |
-| `gonk-01` | `10.33.111.200` | DHCP reservation, reprovisioned as needed |
-| `gonk-02` | `10.33.111.201` | DHCP reservation, reprovisioned as needed |
+| `errata` | `10.33.111.200` | DHCP reservation, reprovisioned as needed |
+| `delamain` | `10.33.111.106` | static, planned |
 
 ## DNS
 

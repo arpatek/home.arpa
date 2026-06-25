@@ -39,13 +39,13 @@ Weekly vzdump job (Datacenter → Backup, stored in `/etc/pve/jobs.cfg`):
 |             |                                                   |
 | ----------- | ------------------------------------------------- |
 | Schedule    | Sunday 02:00                                      |
-| VMs         | 100–105 (all prod)                                |
+| VMs         | 100–106 (all prod)                                |
 | Mode        | snapshot — guest-agent fs-freeze, no downtime     |
 | Compression | zstd                                              |
 | Retention   | keep-last=3                                       |
 | Storage     | `backups` — separate physical drive from VM disks |
 
-The gonk dev VMs and the cloud-init template are excluded — both are reprovisionable.
+The `errata` dev VM and the cloud-init template are excluded — both are reprovisionable.
 
 ## Network
 
@@ -62,8 +62,8 @@ All VMs attach to `vmbr0` and receive IPs from Pi-hole DHCP or via cloud-init st
 | 103  | erebus     | running  | 2     | 3GB    | 100GB  | 10.33.111.103   |
 | 104  | sandevistan     | running  | 2     | 3GB    | 100GB  | 10.33.111.104   |
 | 105  | kerenzikov     | running  | 2     | 3GB    | 100GB  | 10.33.111.105   |
-| 200  | gonk-01             | running  | 2     | 4GB    | 32GB   | 10.33.111.200   |
-| 201  | gonk-02             | planned  | 2     | 4GB    | 32GB   | 10.33.111.201   |
+| 106  | delamain              | planned  | 2     | 4GB    | 100GB  | 10.33.111.106   |
+| 200  | errata                | running  | 2     | 4GB    | 32GB   | 10.33.111.200   |
 | 9000 | debian-13-cloud       | template | —     | —      | 3GB    | —               |
 
 ## Repository layout
