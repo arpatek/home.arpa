@@ -116,3 +116,42 @@ Fake A records for `_kerberos._tcp.home.arpa` and `_ldap._tcp.home.arpa` were pa
 Centralizing authority in FreeIPA means any change to a host record is immediately visible everywhere without a second update step.
 `dns.revServers` handles the delegation cleanly: Pi-hole forwards the entire `home.arpa` zone and `10.33.111.0/24` reverse zone to mikoshi.
 The split-horizon `arpatek.dev` entries remain in `dns.hosts` — those are Pi-hole's own responsibility.
+
+## Redundant Pi-hole via nebula-sync over keepalived
+
+**Decision.** A second Pi-hole on `edgerunner` provides DNS redundancy. The two instances are kept identical by `nebula-sync`, and clients fail over via DHCP-advertised dual DNS — not a shared VIP managed by keepalived.
+
+**Alternatives considered.**
+
+_keepalived + VRRP (floating VIP)._ A virtual IP floats to whichever node is healthy; clients point at the VIP and get ~3s automatic failover, covering statically-configured clients too. This is the "enterprise" HA pattern.
+
+_gravity-sync / orbital-sync._ The previous generation of Pi-hole sync tools. Both are archived — they targeted the Pi-hole v5 API and don't work with v6's Teleporter/auth model. Not viable.
+
+_Manual config duplication._ Configure both by hand, keep them in sync manually. Guaranteed drift over time.
+
+**Why nebula-sync + dual DNS.**
+
+keepalived adds real moving parts: a VRRP daemon on both nodes, a third IP, health-check scripting, and a new failure mode (split-brain if VRRP misbehaves). Client-side failover needs none of it — every OS resolver already tries DNS servers in order and falls through on timeout. Handing out both Pi IPs via DHCP option 6 gets failover from code that's already running on every client, with zero extra infrastructure. The trade-off is that failover is per-query timeout rather than sub-second VIP movement, and statically-configured hosts don't benefit — acceptable for a homelab.
+
+`nebula-sync` is the maintained successor to gravity-sync for Pi-hole v6. It drives the Teleporter API to replicate config from a primary, which fits the "one source of truth, enforced onto replicas" model exactly.
+
+## Selective sync over full sync (DHCP guard)
+
+**Decision.** `nebula-sync` runs with `FULL_SYNC=false`, enabling only DNS, resolver, NTP, misc, and gravity sections. DHCP and the query database are excluded.
+
+**Why.**
+`FULL_SYNC=true` teleports the entire config blob, which includes the DHCP settings. That would set `dhcp.active=true` on `edgerunner` and produce two DHCP servers racing on the same `/24` — conflicting leases and intermittent, hard-to-diagnose network failures. Excluding DHCP (`SYNC_CONFIG_DHCP=false`, its default) keeps DHCP solely on `netrunner`. The query database is excluded (`SYNC_CONFIG_DATABASE=false`) so each instance keeps its own query history rather than one stomping the other. Selective sync makes the safe sections opt-in and the dangerous one impossible to enable by accident.
+
+## App password over admin password for sync
+
+**Decision.** `nebula-sync` authenticates to both instances with per-instance Pi-hole v6 **app passwords**, not the admin password. The replica additionally has `webserver.api.app_sudo = true`.
+
+**Why.**
+An app password is a scoped, independently revocable credential. If it leaks, you revoke one token instead of rotating the admin login. This is the least-privilege choice for a service account. The cost is that Pi-hole v6 gates privileged operations — the Teleporter *import* rewrites config, a sudo-class action — behind `webserver.api.app_sudo`, which must be enabled on the replica (the write target) for the import to be permitted. That's a deliberate, narrow widening of the replica's app-password scope, not a blanket grant. See [gotchas.md](gotchas.md) for the 403 this produces if forgotten.
+
+## DHCP stays single-homed on netrunner
+
+**Decision.** Only `netrunner` runs DHCP. `edgerunner` is a DNS-only replica.
+
+**Why.**
+Pi-hole has no HA DHCP — two active DHCP servers on one segment issue conflicting IPs. DNS is trivially redundant (two independent resolvers); DHCP is not. Rather than attempt DHCP failover, DHCP is kept single-homed and accepted as a single point of failure. The mitigation is lease duration: if `netrunner` goes down, no *new* leases are issued, but existing clients keep their current lease — including both DNS servers — for the 24h lease time, and continue resolving via `edgerunner`. For a homelab this is the right trade: DNS redundancy where it's cheap, and a bounded, understood DHCP gap rather than fragile DHCP HA.

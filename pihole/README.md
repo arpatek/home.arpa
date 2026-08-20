@@ -16,9 +16,22 @@ It handles ad blocking and NSFW filtering for all devices on the `10.33.111.0/24
 
 FreeIPA (`mikoshi`) is the primary DNS authority for the `home.arpa` domain.
 Pi-hole handles upstream resolution to Cloudflare and content filtering for all devices.
-Non-enrolled devices (phones, laptops, IoT) use Pi-hole as their sole DNS server.
+Non-enrolled devices (phones, laptops, IoT) use Pi-hole for DNS — both instances are advertised, see [High availability](#high-availability).
 
 `home.arpa` is reserved for private local network use per [RFC 8375](https://datatracker.ietf.org/doc/html/rfc8375).
+
+## High availability
+
+A second Pi-hole runs on `edgerunner` (`10.33.111.142`) as a redundant resolver. The two are independent standalone Pi-hole v6 instances kept configuration-identical by `nebula-sync` — not a cluster.
+
+| Instance     | IP              | Role                                              |
+| ------------ | --------------- | ------------------------------------------------- |
+| `netrunner`  | `10.33.111.141` | Primary — config source of truth, sole DHCP server |
+| `edgerunner` | `10.33.111.142` | Replica — DNS only, DHCP off                       |
+
+Clients receive both addresses as DNS servers via DHCP option 6 (`netrunner` first, `edgerunner` second). Failover happens at the client resolver: if one instance is down, clients roll to the other — no VIP, no failover daemon.
+
+`nebula-sync` pushes `netrunner`'s configuration to `edgerunner` hourly via a `systemd` timer, enforcing identical blocklists, upstreams, and DNS settings while **excluding DHCP** (only `netrunner` serves DHCP). See [docs/architecture.md](docs/architecture.md) for the sync model, [docs/decisions.md](docs/decisions.md) for why nebula-sync over keepalived, and [nebula-sync/](nebula-sync/) for the unit files.
 
 ## Repository layout
 
@@ -26,8 +39,12 @@ Non-enrolled devices (phones, laptops, IoT) use Pi-hole as their sole DNS server
 pihole/
 ├── README.md                   # this file — config reference and DNS record inventory
 ├── pihole.toml.example         # Pi-hole v6 configuration (non-default values marked ### CHANGED)
+├── nebula-sync/                # config replication to the edgerunner replica
+│   ├── nebula-sync.service     # oneshot systemd unit (runs on netrunner)
+│   ├── nebula-sync.timer       # hourly timer
+│   └── nebula-sync.env.example # env file template (secrets redacted)
 └── docs/
-    ├── architecture.md         # DNS resolution flow and network role
+    ├── architecture.md         # DNS resolution flow, network role, HA sync model
     ├── decisions.md            # design choices and rationale
     ├── gotchas.md              # issues encountered during setup
     └── upgrading.md            # Pi-hole upgrade procedures
@@ -48,12 +65,15 @@ curl -sSL https://install.pi-hole.net | bash
 Pi-hole serves DHCP for the `10.33.111.0/24` network via the `eth0` interface.
 All devices on the network receive an IP — unknown clients are not ignored.
 
-| Setting       | Value                          |
-| ------------- | ------------------------------ |
-| Range         | `10.33.111.2` – `10.33.111.254` |
-| Gateway       | `10.33.111.1`                  |
-| Lease time    | `24h`                          |
-| Local domain  | `home.arpa`                    |
+| Setting        | Value                                        |
+| -------------- | -------------------------------------------- |
+| Range          | `10.33.111.2` – `10.33.111.254`              |
+| Gateway        | `10.33.111.1`                                |
+| Lease time     | `24h`                                        |
+| Local domain   | `home.arpa`                                  |
+| DNS advertised | `10.33.111.141`, `10.33.111.142` (option 6)  |
+
+DHCP runs only on `netrunner`. Both Pi-hole IPs are advertised to clients via a `dhcp-option=6` line in `misc.dnsmasq_lines` (see [High availability](#high-availability) and [docs/gotchas.md](docs/gotchas.md)).
 
 ### Upstream DNS
 
@@ -67,8 +87,10 @@ All devices on the network receive an IP — unknown clients are not ignored.
 - `home.arpa` forward queries and `10.33.111.0/24` reverse lookups delegated to FreeIPA (`10.33.111.100`) via `dns.revServers`
 - `10.10.10.0/24` (WireGuard) reverse lookups answered locally
 - Private reverse lookups not forwarded upstream (`bogusPriv`)
-- `local=/local/` in `misc.dnsmasq_lines` — mDNS domain answered immediately (prevents 5–20s upstream timeout)
-- `dhcp.multiDNS = false` — mDNS DHCP registration disabled
+- `misc.dnsmasq_lines` holds two entries:
+  - `local=/local/` — mDNS domain answered immediately (prevents 5–20s upstream timeout)
+  - `dhcp-option=6,10.33.111.141,10.33.111.142` — advertises both Pi-hole instances as DNS servers via DHCP
+- `dhcp.multiDNS = false` — mDNS DHCP registration disabled (must stay `false`; enabling it injects a duplicate option 6 — see [docs/gotchas.md](docs/gotchas.md))
 - Listening mode: `ALL` — serves both LAN and WireGuard clients on `10.10.10.0/24`
 - NTP: `us.pool.ntp.org`
 

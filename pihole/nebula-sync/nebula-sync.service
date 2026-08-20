@@ -1,0 +1,26 @@
+# /etc/systemd/system/nebula-sync.service
+# Runs on netrunner (primary). Replicates Pi-hole config to the edgerunner replica.
+# oneshot fired by nebula-sync.timer — see also nebula-sync.env.example.
+
+[Unit]
+Description=nebula-sync — replicate Pi-hole config to edgerunner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=nebula-sync
+Group=nebula-sync
+EnvironmentFile=/etc/nebula-sync/nebula-sync.env
+ExecStart=/usr/local/bin/nebula-sync run
+
+# Hardening — the job only needs outbound HTTP and to read one env file.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+CapabilityBoundingSet=

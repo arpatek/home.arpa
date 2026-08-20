@@ -94,9 +94,59 @@ The result: all DNS queries for anything outside `home.arpa` pass through Pi-hol
 
 ## DHCP
 
-FTL also runs the DHCP server for the `10.33.111.0/24` network.
-When a device requests an IP, Pi-hole assigns one from the configured range (`10.33.111.2–254`), sets the gateway to `10.33.111.1`, and tells the client to use `10.33.111.141` as its DNS server.
-This ensures all devices use Pi-hole for DNS automatically, without manual client configuration.
+FTL also runs the DHCP server for the `10.33.111.0/24` network — on `netrunner` only.
+When a device requests an IP, Pi-hole assigns one from the configured range (`10.33.111.2–254`), sets the gateway to `10.33.111.1`, and advertises **both** Pi-hole instances as DNS servers (`10.33.111.141`, then `10.33.111.142`) via DHCP option 6.
+This ensures all devices use Pi-hole for DNS automatically, with the replica as an automatic fallback, without manual client configuration.
+
+## High availability
+
+A second Pi-hole runs on `edgerunner` (`10.33.111.142`). The two instances are **independent standalone resolvers kept configuration-identical** — Pi-hole has no native clustering, no shared state, no quorum. "Redundant Pi-hole" means two boxes deliberately configured the same, not a cluster.
+
+```mermaid
+flowchart LR
+    subgraph CLIENTS["Network clients"]
+        C["DHCP clients\n(option 6: .141, .142)"]
+    end
+
+    subgraph PRIMARY["netrunner (.141)"]
+        FTLP["pihole-FTL\nDNS · DHCP"]
+        NS["nebula-sync\n(oneshot + timer)"]
+    end
+
+    subgraph REPLICA["edgerunner (.142)"]
+        FTLR["pihole-FTL\nDNS only"]
+    end
+
+    C -->|"query .141 (primary)"| FTLP
+    C -.->|"fallback .142"| FTLR
+    NS -->|"read config"| FTLP
+    NS -->|"push config (hourly)\nDHCP excluded"| FTLR
+
+    linkStyle default stroke:#000000,stroke-width:2px;
+
+    classDef core      fill:#111111,stroke:#000000,color:#ffffff,stroke-width:2px;
+    classDef sync      fill:#444444,stroke:#000000,color:#ffffff,stroke-width:1.5px;
+    classDef external  fill:#bbbbbb,stroke:#000000,color:#000000,stroke-width:1.5px;
+    classDef hostlabel fill:#d4a574,stroke:#000000,color:#000000,stroke-width:1.5px;
+
+    class FTLP,FTLR core;
+    class NS sync;
+    class C external;
+    class CLIENTS,PRIMARY,REPLICA hostlabel;
+```
+
+**Roles.**
+
+- `netrunner` (`.141`) — primary. The config source of truth and the **sole DHCP server**.
+- `edgerunner` (`.142`) — replica. DNS only; DHCP stays off.
+
+**Config replication (enforce).**
+`nebula-sync` runs on `netrunner` as a `oneshot` `systemd` service fired hourly by a timer. Each run reads `netrunner`'s config via the Pi-hole v6 API (Teleporter) and imports the selected sections into `edgerunner`. This is enforcement, not one-time provisioning: like a Puppet agent run, every hour it re-asserts desired state and corrects any drift on the replica.
+
+It syncs DNS settings, resolver config, and gravity (blocklists, groups, clients) — everything that makes the replica a faithful drop-in. It deliberately does **not** sync DHCP (`SYNC_CONFIG_DHCP=false`) or the query database (`SYNC_CONFIG_DATABASE=false`). Excluding DHCP is the critical guard: a full sync would set `dhcp.active=true` on `edgerunner`, and two DHCP servers on one segment issue conflicting leases. The unit files and env template are in [../nebula-sync/](../nebula-sync/).
+
+**Failover (client-side).**
+There is no VIP and no failover daemon. Clients receive both resolver addresses via DHCP option 6 and their OS resolver handles fallback: try `.141` first, roll to `.142` on timeout. The redundancy lives in the client's resolver — code already running on every device — and rides in the DHCP lease, which is why the option-6 change must reach clients *before* an outage. If `netrunner` (which also serves DHCP) goes down, existing leases still carry both servers, so clients keep resolving via `edgerunner` until their lease expires.
 
 ## On-disk layout
 

@@ -1,0 +1,15 @@
+# /etc/systemd/system/nebula-sync.timer
+# Fires nebula-sync.service 5 min after boot, then hourly.
+# OnUnitActiveSec spaces runs an hour apart from each other (not wall-clock),
+# so a slow gravity rebuild never overlaps the next run.
+
+[Unit]
+Description=Run nebula-sync hourly
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

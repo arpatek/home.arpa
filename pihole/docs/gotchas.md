@@ -154,3 +154,85 @@ This tells dnsmasq to answer `local.` immediately with NXDOMAIN from local data,
 
 After restart, latency drops from 5–20s to under 1ms.
 The queries continue — they are normal device behavior — but are now harmless.
+
+---
+
+## nebula-sync HA gotchas
+
+Issues encountered wiring up the `edgerunner` replica with `nebula-sync`.
+
+### Teleporter import returns 403 with app passwords
+
+**Symptom.**
+`nebula-sync` authenticates fine but fails on import:
+
+```
+FTL Sync failed error="sync teleporters: http://10.33.111.142/api/teleporter: unexpected status code: 403"
+```
+
+The export from the primary works; only the import into the replica 403s.
+
+**Cause.**
+Authentication succeeded (a `401` would mean bad credentials) — this is `403 Forbidden`: the app-password session is valid but not *permitted* to do this. A Teleporter import rewrites the entire config, a sudo-class action. Pi-hole v6 gates that behind `webserver.api.app_sudo`, which defaults to `false`. An app-password session can read and do light operations but cannot import config until `app_sudo` is enabled.
+
+**Fix.**
+Enable `app_sudo` on the **replica** (the write target — `edgerunner`), not the primary:
+
+```bash
+sudo pihole-FTL --config webserver.api.app_sudo true
+pihole-FTL --config webserver.api.app_sudo        # verify: true
+```
+
+Applies live, no restart. The primary (`netrunner`) is only ever read from, so it doesn't need it. This is [nebula-sync #83](https://github.com/lovelaze/nebula-sync/issues/83).
+
+**Broken assumption.**
+A valid app password implies full API access. It doesn't — Pi-hole v6 scopes app-password sessions away from privileged/config-writing operations by default. `app_sudo` is the explicit opt-in.
+
+### `dhcp-option=6` collides with `dhcp.multiDNS`
+
+**Symptom.**
+Clients receive garbage DNS servers (entries containing `0.0.0.0`), and `pihole-FTL` logs `Ignoring duplicate dhcp-option 6`.
+
+**Cause.**
+Two things try to set DHCP option 6 at once: the manual `dhcp-option=6,...` line in `misc.dnsmasq_lines`, and Pi-hole's own "advertise DNS server multiple times" feature (`dhcp.multiDNS`). When both are active, dnsmasq sees a duplicate option 6 and the auto-generated entry produces `0.0.0.0` placeholders. This is [pi-hole #6360](https://github.com/pi-hole/pi-hole/issues/6360).
+
+**Fix.**
+Set option 6 manually (needed to advertise both Pi-hole instances) and keep `dhcp.multiDNS = false`:
+
+```bash
+pihole-FTL --config dhcp.multiDNS      # must read false
+```
+
+Verify the served config has exactly one option 6, in the generated dnsmasq file:
+
+```bash
+grep -E 'dhcp-option|local=/local/' /etc/pihole/dnsmasq.conf
+```
+
+### `misc.dnsmasq_lines` is an array — setting it replaces the whole thing
+
+**Symptom.**
+Adding the `dhcp-option=6` line via CLI wipes the existing `local=/local/` entry (mDNS latency returns).
+
+**Cause.**
+`misc.dnsmasq_lines` is a TOML array. `pihole-FTL --config` sets the entire key — there is no append. Passing only the new line replaces the array and drops `local=/local/`.
+
+**Fix.**
+Set the whole array, including every entry you want to keep:
+
+```bash
+sudo pihole-FTL --config misc.dnsmasq_lines \
+  '[ "local=/local/", "dhcp-option=6,10.33.111.141,10.33.111.142" ]'
+pihole-FTL --config misc.dnsmasq_lines     # confirm BOTH entries present
+```
+
+### journal is unreadable without `sudo` for non-admin users
+
+**Symptom.**
+`journalctl -u nebula-sync.service` prints "No journal files were opened due to insufficient permissions" and shows nothing.
+
+**Cause.**
+A user not in the `adm` or `systemd-journal` group can only see its own journal, not system-service logs.
+
+**Fix.**
+Prefix with `sudo` (`sudo journalctl -u nebula-sync.service`), or add the user to `adm`/`systemd-journal` if it should read service logs routinely.
