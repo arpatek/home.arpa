@@ -1,0 +1,47 @@
+# =============================================================================
+# smb.conf — netrunner NAS (Samba, standalone)
+# Purpose-built minimal config: local tdbsam users, no home shares, no printing.
+# Matches the edgerunner config; serves the RAID1 `tank` share.
+# Back up the current file before deploying (see nas/docs/upgrading.md).
+# Author: Juan Garcia (arpatek)
+# =============================================================================
+
+# ──[ Global ]─────────────────────────────────────────────────────────────────
+[global]
+   workgroup      = WORKGROUP
+   server role    = standalone server
+   server string  = %h NAS
+   map to guest   = Bad User
+
+   # Local user auth (tdbsam); keep smbpasswd changes in sync with unix passwd
+   passdb backend      = tdbsam
+   unix password sync  = yes
+   passwd program      = /usr/bin/passwd %u
+   passwd chat         = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+   pam password change = yes
+
+   # No print services on a NAS — removes the CVE-2026-4480 printing RCE surface
+   load printers  = no
+   printing       = bsd
+   printcap name  = /dev/null
+   disable spoolss = yes
+
+   # Logging
+   logging      = file
+   log file     = /var/log/samba/log.%m
+   max log size = 1000
+
+# ──[ tank — RAID1 mirror (redundant) ]────────────────────────────────────────
+[tank]
+   comment             = RAID1 mirror (redundant)
+   path                = /srv/nas
+   valid users         = @nas
+   force group         = nas
+   read only           = no
+   create mask         = 0660
+   force create mode   = 0660
+   directory mask      = 2770
+   force directory mode = 2770
+   inherit permissions = yes
+   delete veto files   = yes
+   veto files          = /lost+found/._*/.DS_Store/

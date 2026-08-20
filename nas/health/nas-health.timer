@@ -1,0 +1,14 @@
+# /etc/systemd/system/nas-health.timer
+# Runs the mount health check every 5 minutes so a dropped share is caught in
+# minutes, not days (the stor drop went unnoticed 2026-08-14 -> 2026-08-17).
+
+[Unit]
+Description=Run nas-health every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

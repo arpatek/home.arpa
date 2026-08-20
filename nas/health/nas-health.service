@@ -1,0 +1,18 @@
+# /etc/systemd/system/nas-health.service
+# Verifies NAS share mounts are alive; logs a journald error on any fault.
+# Fired by nas-health.timer. Inspect faults with:
+#   journalctl -p err -u nas-health
+
+[Unit]
+Description=NAS share mount health check
+After=remote-fs.target local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-health.sh
+
+# Read-only probe — no writes, no new privileges needed.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
