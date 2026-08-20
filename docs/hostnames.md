@@ -27,7 +27,8 @@ WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g.
 | `erebus` | `10.33.111.103` | `prod-k3s-master-0` | k3s control plane |
 | `sandevistan` | `10.33.111.104` | `prod-k3s-worker-0` | k3s worker |
 | `kerenzikov` | `10.33.111.105` | `prod-k3s-worker-1` | k3s worker |
-| `netrunner` | `10.33.111.141` | `netrunner-rpi` | Pi-hole + WireGuard + NAS |
+| `netrunner` | `10.33.111.141` | `netrunner-rpi` | Pi-hole (primary) + WireGuard + NAS (`tank`) |
+| `edgerunner` | `10.33.111.142` | — | Pi-hole (replica) + NAS (`nas`, `stor`) |
 | `errata` | `10.33.111.200` | `gonk-01` | Dev VM — reprovisioned as needed |
 | `delamain` | `10.33.111.106` | — | IaC control host — Puppet, Ansible, Terraform (planned) |
 

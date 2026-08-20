@@ -4,7 +4,7 @@
 
 **Subnet:** `10.33.111.0/24`
 **Gateway:** `10.33.111.1` (home router)
-**DHCP server:** Pi-hole on `netrunner` (`10.33.111.141`), range `10.33.111.2–254`
+**DHCP server:** Pi-hole on `netrunner` (`10.33.111.141`), range `10.33.111.2–254`. Advertises both Pi-hole resolvers (`.141`, `.142`) to clients via DHCP option 6.
 
 ## Host IP assignments
 
@@ -18,6 +18,7 @@
 | `sandevistan` | `10.33.111.104` | static, set via cloud-init |
 | `kerenzikov` | `10.33.111.105` | static, set via cloud-init |
 | `netrunner` | `10.33.111.141` | static |
+| `edgerunner` | `10.33.111.142` | static, Pi-hole replica + NAS |
 | `errata` | `10.33.111.200` | DHCP reservation, reprovisioned as needed |
 | `delamain` | `10.33.111.106` | static, planned |
 
@@ -30,10 +31,12 @@ All IPA-enrolled VMs point their resolver at `mikoshi`.
 FreeIPA BIND answers `home.arpa` queries authoritatively and forwards everything else upstream to Pi-hole.
 Non-enrolled infrastructure hosts (e.g. `netrunner`) also have manually managed A and PTR records in FreeIPA DNS so that enrolled VMs can resolve them by FQDN.
 
-**Pi-hole** (`netrunner`, `10.33.111.141`) is the recursive resolver and content filter for the rest of the network.
-Non-enrolled devices (laptops, phones, IoT) use Pi-hole as their only DNS server.
-WireGuard clients use Pi-hole via the tunnel.
+**Pi-hole** is the recursive resolver and content filter for the rest of the network, running as a redundant pair: `netrunner` (`10.33.111.141`, primary) and `edgerunner` (`10.33.111.142`, replica).
+The two are independent standalone instances kept configuration-identical by `nebula-sync`; DHCP advertises both, and clients fail over at the resolver level.
+Non-enrolled devices (laptops, phones, IoT) use both as their DNS servers.
+WireGuard clients use `netrunner` via the tunnel.
 FreeIPA-enrolled VMs also reach Pi-hole indirectly — BIND forwards non-`home.arpa` queries to it.
+DHCP runs on `netrunner` only — see [pihole/docs/decisions.md](../pihole/docs/decisions.md) for why DHCP stays single-homed while DNS is redundant.
 
 The result: every DNS query that leaves the lab, regardless of client type, passes through Pi-hole's blocklist.
 
