@@ -10,7 +10,7 @@ Servers use short hostnames (`erebus`, `netwatch`) without a domain suffix — t
 
 IPA-enrolled hosts are an exception: `ipa-client-install` requires the full FQDN at enrollment time, so enrolled VMs carry `hostname.home.arpa` as their OS hostname.
 
-WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g. `wg-silverhand`, `wg-malorian`).
+WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g. `wg-darwin`, `wg-uplink`).
 
 ---
 
@@ -36,8 +36,7 @@ WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g.
 
 | Hostname | Previous name | Device |
 | -------- | ------------- | ------ |
-| `silverhand` | `asahi` | MacBook Air (Asahi Linux) |
-| `malorian` | `node-zero` | MacBook Air (macOS) |
+| `darwin` | `silverhand`, `malorian` | MacBook Air (macOS) — replaced both laptops |
 | `uplink` | `deck-alpha` | iPhone |
 | `dataslab` | `deck-gamma` | iPad Mini |
 | `mizutani` | `node-one` | Mac Mini |
@@ -49,10 +48,9 @@ WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g.
 
 | Peer interface | Previous name | Device |
 | -------------- | ------------- | ------ |
-| `wg-malorian` | `node-zero` | MacBook Air (macOS) |
+| `wg-darwin` | `wg-malorian`, `wg-silverhand` | MacBook Air (macOS) |
 | `wg-uplink` | `deck-alpha` | iPhone |
 | `wg-dataslab` | `deck-gamma` | iPad Mini |
-| `wg-silverhand` | `wg-asahi` | MacBook Air (Asahi Linux) |
 
 ---
 
