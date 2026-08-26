@@ -69,10 +69,9 @@ Netgear Gateway (10.33.111.1)
     ▼
 netrunner (10.33.111.141) ← WireGuard server (10.10.10.1)
     │
-    ├── wg-malorian  (10.10.10.10) — MacBook Air (macOS)
+    ├── wg-darwin    (10.10.10.10) — MacBook Air (macOS)
     ├── wg-uplink    (10.10.10.11) — iPhone
-    ├── wg-dataslab  (10.10.10.12) — iPad Mini
-    └── wg-silverhand     (10.10.10.13) — MacBook Air (Asahi Linux)
+    └── wg-dataslab  (10.10.10.12) — iPad Mini
 ```
 
 ## Configuration
@@ -123,10 +122,9 @@ Rules are managed via `iptables-persistent` and loaded at boot independently of 
 
 | Name       | Device      | WireGuard IP  | Public Key                                     |
 | ---------- | ----------- | ------------- | ---------------------------------------------- |
-| wg-malorian  | MacBook Air (macOS)         | `10.10.10.10` | `RmVAFWfPghKVxOYlINTn7PTI8MWHSVEE/Z+3wRtqzms=` |
+| wg-darwin    | MacBook Air (macOS)         | `10.10.10.10` | `RmVAFWfPghKVxOYlINTn7PTI8MWHSVEE/Z+3wRtqzms=` |
 | wg-uplink    | iPhone                      | `10.10.10.11` | `ch7E8s+mtl3+m1vKf4UCJqokzs6rAc1Ax2QGVmd64DQ=` |
 | wg-dataslab  | iPad Mini                   | `10.10.10.12` | `m20JP1PK3hSBT5cbyaf/ZCB+lPUcbJX/zEVQPdTnrX0=` |
-| wg-silverhand | MacBook Air (Asahi Linux)  | `10.10.10.13` | `/bTfQgb2K/raTXjE5dZdNyIvW84KUaHUsn4zjUW0TRM=` |
 
 ### Port forwarding
 

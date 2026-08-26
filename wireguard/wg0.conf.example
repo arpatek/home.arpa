@@ -5,7 +5,7 @@ MTU = 1380
 PrivateKey = ""
 
 
-# Peer: wg-malorian (MacBook Air — macOS)
+# Peer: wg-darwin (MacBook Air — macOS)
 [Peer]
 PublicKey = RmVAFWfPghKVxOYlINTn7PTI8MWHSVEE/Z+3wRtqzms=
 AllowedIPs = 10.10.10.10/32
@@ -20,7 +20,3 @@ AllowedIPs = 10.10.10.11/32
 PublicKey = m20JP1PK3hSBT5cbyaf/ZCB+lPUcbJX/zEVQPdTnrX0=
 AllowedIPs = 10.10.10.12/32
 
-# Peer: wg-silverhand (MacBook Air — Asahi Linux)
-[Peer]
-PublicKey = /bTfQgb2K/raTXjE5dZdNyIvW84KUaHUsn4zjUW0TRM=
-AllowedIPs = 10.10.10.13/32
