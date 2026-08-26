@@ -6,7 +6,7 @@
 # Author: Juan Garcia (arpatek)
 # =============================================================================
 
-# ──[ Global ]─────────────────────────────────────────────────────────────────
+# ──[ Global ]──────────────────────────────────────────────────────────────────
 [global]
    workgroup      = WORKGROUP
    server role    = standalone server
@@ -31,7 +31,7 @@
    log file     = /var/log/samba/log.%m
    max log size = 1000
 
-# ──[ tank — RAID1 mirror (redundant) ]────────────────────────────────────────
+# ──[ tank — RAID1 mirror (redundant) ]─────────────────────────────────────────
 [tank]
    comment             = RAID1 mirror (redundant)
    path                = /srv/nas

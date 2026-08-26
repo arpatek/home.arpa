@@ -8,7 +8,7 @@
 # Version: 1.0
 # =============================================================================
 
-# ──[ Bash Version Check ]─────────────────────────────────────────────────────
+# ──[ Bash Version Check ]──────────────────────────────────────────────────────
 if ((BASH_VERSINFO[0] < 4)); then
   printf "provision-k3s.sh requires bash 4 or higher (detected: %s)\n" "$BASH_VERSION" >&2
   exit 1
@@ -16,7 +16,7 @@ fi
 
 set -eo pipefail
 
-# ──[ ANSI Color Codes ]───────────────────────────────────────────────────────
+# ──[ ANSI Color Codes ]────────────────────────────────────────────────────────
 declare -A C=(
   [red]=$'\033[0;31m'
   [green]=$'\033[0;32m'
@@ -26,16 +26,16 @@ declare -A C=(
   [reset]=$'\033[0m'
 )
 
-# ──[ Decoration Functions ]───────────────────────────────────────────────────
+# ──[ Decoration Functions ]────────────────────────────────────────────────────
 BANNER()   { printf "%s[%s^%s]%s" "${C[yellow]}" "${C[purple]}" "${C[yellow]}" "${C[reset]}"; }
 PLUS()     { printf "%s[%s+%s]%s" "${C[yellow]}" "${C[green]}"  "${C[yellow]}" "${C[reset]}"; }
 COMPLETE() { printf "%s[%s*%s]%s" "${C[yellow]}" "${C[blue]}"   "${C[yellow]}" "${C[reset]}"; }
 FAILED()   { printf "%s[%s!%s]%s" "${C[yellow]}" "${C[red]}"    "${C[yellow]}" "${C[reset]}"; }
 
-# ──[ Error Trap ]─────────────────────────────────────────────────────────────
+# ──[ Error Trap ]──────────────────────────────────────────────────────────────
 trap 'printf "\n%s Provisioning failed. Aborting.\n" "$(FAILED)"' ERR
 
-# ──[ Configuration ]──────────────────────────────────────────────────────────
+# ──[ Configuration ]───────────────────────────────────────────────────────────
 TEMPLATE_ID=9000
 TEMPLATE_NAME="debian-13-cloud"
 CLOUD_IMAGE_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
@@ -58,7 +58,7 @@ VM_NAMESERVER="10.33.111.100"
 VM_SEARCHDOMAIN="home.arpa"
 VM_CIUSER="sysadmin"
 
-# ──[ Privileged Session Caching ]─────────────────────────────────────────────
+# ──[ Privileged Session Caching ]──────────────────────────────────────────────
 sudo -v || exit 1
 while true; do
   sudo -n true
@@ -66,7 +66,7 @@ while true; do
   kill -0 "$$" || exit
 done 2>/dev/null &
 
-# ──[ Functions ]──────────────────────────────────────────────────────────────
+# ──[ Functions ]───────────────────────────────────────────────────────────────
 create_template() {
   printf "%s Downloading Debian 13 cloud image\n" "$(BANNER)"
   wget -O "$CLOUD_IMAGE" "$CLOUD_IMAGE_URL"
@@ -126,7 +126,7 @@ clone_and_configure() {
   sleep 0.2
 }
 
-# ──[ Main ]───────────────────────────────────────────────────────────────────
+# ──[ Main ]────────────────────────────────────────────────────────────────────
 printf "%s Starting k3s cluster provisioning\n\n" "$(BANNER)"
 sleep 1
 

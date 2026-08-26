@@ -1,4 +1,4 @@
-# ──[ ConfigMap: cloudflared tunnel config ]──────────────────────────────────
+# ──[ ConfigMap: cloudflared tunnel config ]────────────────────────────────────
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,7 +22,7 @@ data:
           httpHostHeader: www.arpatek.dev
       - service: http_status:404
 ---
-# ──[ Deployment: cloudflared ]───────────────────────────────────────────────
+# ──[ Deployment: cloudflared ]─────────────────────────────────────────────────
 apiVersion: apps/v1
 kind: Deployment
 metadata:

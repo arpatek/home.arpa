@@ -6,7 +6,7 @@
 # Author: Juan Garcia (arpatek)
 # =============================================================================
 
-# ──[ Global ]─────────────────────────────────────────────────────────────────
+# ──[ Global ]──────────────────────────────────────────────────────────────────
 [global]
    workgroup      = WORKGROUP
    server role    = standalone server
@@ -31,7 +31,7 @@
    log file     = /var/log/samba/log.%m
    max log size = 1000
 
-# ──[ nas — migrated data (WD Red SA500 500GB, USB) ]──────────────────────────
+# ──[ nas — migrated data (WD Red SA500 500GB, USB) ]───────────────────────────
 [nas]
    comment             = Primary NAS (migrated from netrunner)
    path                = /srv/shares/nas
@@ -46,7 +46,7 @@
    delete veto files   = yes
    veto files          = /lost+found/._*/.DS_Store/
 
-# ──[ stor — scratch / fast-local (WD Blue 250GB SATA SSD, USB) ]──────────────
+# ──[ stor — scratch / fast-local (WD Blue 250GB SATA SSD, USB) ]───────────────
 [stor]
    comment             = Scratch / fast-local store
    path                = /srv/shares/stor
