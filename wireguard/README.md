@@ -123,8 +123,8 @@ Rules are managed via `iptables-persistent` and loaded at boot independently of 
 | Name       | Device      | WireGuard IP  | Public Key                                     |
 | ---------- | ----------- | ------------- | ---------------------------------------------- |
 | wg-darwin    | MacBook Air (macOS)         | `10.10.10.10` | `RmVAFWfPghKVxOYlINTn7PTI8MWHSVEE/Z+3wRtqzms=` |
-| wg-uplink    | iPhone                      | `10.10.10.11` | `ch7E8s+mtl3+m1vKf4UCJqokzs6rAc1Ax2QGVmd64DQ=` |
-| wg-dataslab  | iPad Mini                   | `10.10.10.12` | `m20JP1PK3hSBT5cbyaf/ZCB+lPUcbJX/zEVQPdTnrX0=` |
+| wg-uplink    | iPhone                      | `10.10.10.11` | `ISlUsgd4duK+8tdbb14SF/xmr3ioIhjhZx3o9wDkJQQ=` |
+| wg-dataslab  | iPad Mini                   | `10.10.10.12` | `2xDml5jGVj1n/sXgF7obW5XoaFohbXft54+ua5fks3U=` |
 
 ### Port forwarding
 

@@ -12,11 +12,11 @@ AllowedIPs = 10.10.10.10/32
 
 # Peer: wg-uplink (iPhone)
 [Peer]
-PublicKey = ch7E8s+mtl3+m1vKf4UCJqokzs6rAc1Ax2QGVmd64DQ=
+PublicKey = ISlUsgd4duK+8tdbb14SF/xmr3ioIhjhZx3o9wDkJQQ=
 AllowedIPs = 10.10.10.11/32
 
 # Peer: wg-dataslab (iPad Mini)
 [Peer]
-PublicKey = m20JP1PK3hSBT5cbyaf/ZCB+lPUcbJX/zEVQPdTnrX0=
+PublicKey = 2xDml5jGVj1n/sXgF7obW5XoaFohbXft54+ua5fks3U=
 AllowedIPs = 10.10.10.12/32
 
