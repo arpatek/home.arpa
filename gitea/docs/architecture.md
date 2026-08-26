@@ -102,7 +102,7 @@ All persistent state lives under `/opt/gitea/` on `soulkiller` as bind mounts:
 ```
 
 `docker-compose.yml` is a symlink into the repo clone.
-To deploy a change: update the repo on silverhand, push, then `sudo git -C /opt/home.arpa pull` on soulkiller.
+To deploy a change: update the repo on darwin, push, then `sudo git -C /opt/home.arpa pull` on soulkiller.
 See [docs/architecture.md](../../docs/architecture.md) for the full config management pattern.
 
 `data/` grows over time.

@@ -24,7 +24,7 @@ One share stanza per mounted store, gated by the `nas` group.
 ```mermaid
 flowchart TB
     subgraph CLIENTS["SMB clients"]
-        MAC["macOS workstations\n(mizutani, malorian)"]
+        MAC["macOS workstations\n(mizutani, darwin)"]
         MOBILE["mobile / other\n(uplink, dataslab)"]
     end
 

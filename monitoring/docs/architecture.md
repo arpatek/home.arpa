@@ -219,7 +219,7 @@ The persistent state of the stack lives in bind-mounted directories on each host
 ```
 
 `docker-compose.yml` is a symlink into `/opt/home.arpa/monitoring/server/docker-compose.yml`.
-To deploy a change: update the repo on silverhand, push, then `sudo git -C /opt/home.arpa pull` on netwatch.
+To deploy a change: update the repo on darwin, push, then `sudo git -C /opt/home.arpa pull` on netwatch.
 See [docs/architecture.md](../../docs/architecture.md) for the full config management pattern.
 
 It defines all six services (Prometheus, Loki, Grafana, Alloy, cAdvisor, node_exporter).
