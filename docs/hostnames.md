@@ -30,7 +30,6 @@ WireGuard client interfaces and configs use the `wg-<hostname>` convention (e.g.
 | `netrunner` | `10.33.111.141` | `netrunner-rpi` | Pi-hole (primary) + WireGuard + NAS (`tank`) |
 | `edgerunner` | `10.33.111.142` | — | Pi-hole (replica) + NAS (`nas`, `stor`) |
 | `errata` | `10.33.111.200` | `gonk-01` | Dev VM — reprovisioned as needed |
-| `delamain` | `10.33.111.106` | — | IaC control host — Puppet, Ansible, Terraform (planned) |
 
 ### Personal devices
 

@@ -20,7 +20,6 @@
 | `netrunner` | `10.33.111.141` | static |
 | `edgerunner` | `10.33.111.142` | static, Pi-hole replica + NAS |
 | `errata` | `10.33.111.200` | DHCP reservation, reprovisioned as needed |
-| `delamain` | `10.33.111.106` | static, planned |
 
 ## DNS
 
