@@ -24,6 +24,7 @@ This is a single-node homelab.
 | `sandevistan` | `10.33.111.104` | Debian 13.3 | k3s worker |
 | `kerenzikov` | `10.33.111.105` | Debian 13.3 | k3s worker |
 | `netrunner` | `10.33.111.141` | Raspberry Pi OS | DNS + DHCP + VPN + NAS |
+| `edgerunner` | `10.33.111.142` | Debian 13 | Pi-hole replica + NAS |
 
 ## Services
 
@@ -55,8 +56,10 @@ Current workloads: `arpatek.dev` (FastAPI personal site) and a Traefik proxy for
 Provides remote access into the `10.33.111.0/24` network from anywhere.
 Connected clients use Pi-hole for DNS, matching LAN behavior.
 
-**NAS** — Samba share on `netrunner`, served from `/srv/nas`.
-Mounted on LAN clients via CIFS at `//netrunner.home.arpa/NAS`.
+**NAS** — Samba shares exported from both Raspberry Pis, mounted on LAN clients over CIFS.
+`tank` on `netrunner` is a 500GB `mdadm` RAID1 mirror of two WD Red SA500 SSDs, served from `/srv/nas`.
+`nas` (500GB) and `stor` (250GB M.2 SATA SSD) sit on `edgerunner` under `/srv/shares/`.
+See [nas/README.md](../nas/README.md) for the full layout.
 
 ## Service dependencies
 
@@ -97,6 +100,7 @@ flowchart TB
     end
 
     RPI[netrunner\nPi-hole + WireGuard + NAS]
+    RPI2[edgerunner\nPi-hole replica + NAS]
 
     K3S -.->|auth + DNS| IPA
     GIT -.->|auth + DNS| IPA
@@ -107,6 +111,7 @@ flowchart TB
     MON -->|scrape + receive| GIT
     MON -->|scrape + receive| IPA
     MON -->|scrape + receive| RPI
+    MON -->|scrape + receive| RPI2
 
     VPN_CLIENT[VPN clients] -->|WireGuard :55055| RPI
     RPI -->|NAT → LAN| DEVSTEM
@@ -171,5 +176,6 @@ Docker named volumes are not used — bind mounts keep data inspectable and back
 | `soulkiller` | `/opt/gitea/{data,config,postgres,runner}` | repositories, CI artifacts, PostgreSQL data |
 | `netwatch` | `/opt/monitoring/{prometheus,loki,grafana}` | metrics TSDB, log chunks, dashboards |
 | `netrunner` | `/etc/pihole/`, `/etc/wireguard/` | DNS config, VPN keys and peer config |
-| `netrunner` | `/srv/nas` | Samba NAS share |
+| `netrunner` | `/srv/nas` | Samba share `tank` — mdadm RAID1 |
+| `edgerunner` | `/srv/shares/{nas,stor}` | Samba shares `nas` and `stor` |
 | `netrunner` | `/etc/alloy/`, `/usr/local/bin/node_exporter` | monitoring agent configs and binaries |
