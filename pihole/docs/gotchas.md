@@ -236,3 +236,121 @@ A user not in the `adm` or `systemd-journal` group can only see its own journal,
 
 **Fix.**
 Prefix with `sudo` (`sudo journalctl -u nebula-sync.service`), or add the user to `adm`/`systemd-journal` if it should read service logs routinely.
+
+---
+
+## netrunner's static IP existed only in runtime state
+
+**Symptom.**
+`netrunner` is unreachable — no ICMP, no SSH, no DNS — but the ethernet link LED is lit and the ACT LED shows normal disk activity.
+ARP for `10.33.111.141` stays `(incomplete)` from every other host on the segment, including `edgerunner`.
+Power cycling changes nothing.
+The box looks dead and is not: on 2026-09-08 it booted three times (20:13, 20:42, 20:54), completed cloud-init in ~118s each time, and started `pihole-FTL` — all while completely invisible to the LAN.
+
+**Cause.**
+`/etc/NetworkManager/system-connections/` was empty.
+NetworkManager is the only network manager enabled on the host — `dhcpcd`, `systemd-networkd` and `networking.service` are all disabled — so with no saved profile it falls back to an auto-generated, DHCP-only wired connection.
+`10.33.111.141` appeared nowhere under `/etc`.
+It existed only in NetworkManager's runtime state, and had done since 2026-04-13 12:38.
+The host survived the following five months purely because it never rebooted.
+
+The profile was not deleted — it was lost in a migration.
+`netplan.io` is installed, and during that boot NetworkManager handed the eth0 connection to netplan, writing `/etc/netplan/90-NM-75a1216a-9d1a-30cd-8aca-ace5526ec021.yaml` at `12:38:16.26`.
+The UUID is eth0's NM connection, and the file came out **0 bytes**.
+The keyfile was gone and the YAML that replaced it was empty, so the address survived only in the running NM process.
+Everything in that window — `/etc/hosts` at `12:38:12`, `/etc/krb5.conf` at `12:38:16.22`, the netplan file 40ms later, the `sssd-*.socket` units failing at `12:38:17`, `/etc/resolv.conf` at `12:38:20` — falls inside the first 35 seconds of a boot, so this was boot-time automation rather than anything run by hand.
+There was no package activity that day, and `~/.bash_history` is empty for the period.
+The `cc_netplan_nm_patch` warning cloud-init emits on every boot is a Raspberry Pi OS packaging bug dating to 2026-02-23, not the trigger.
+
+The failure is self-locking.
+eth0 falls back to DHCP, the segment's only DHCP server is Pi-hole, Pi-hole runs on `netrunner`, and `netrunner` has no address — so it waits forever for a lease that only it could issue.
+This is the same circular-dependency hazard already reasoned about in `decisions.md` under "Co-locating Pi-hole and WireGuard on the Pi", in a place it hadn't been looked for.
+
+**Fix.**
+Write a static keyfile. NetworkManager silently ignores keyfiles that are not `0600 root:root`.
+
+```ini
+# /etc/NetworkManager/system-connections/eth0-static.nmconnection
+[connection]
+id=eth0-static
+type=ethernet
+interface-name=eth0
+autoconnect=true
+autoconnect-priority=100
+
+[ipv4]
+method=manual
+address1=10.33.111.141/24,10.33.111.1
+dns=127.0.0.1;10.33.111.100;
+may-fail=false
+
+[ipv6]
+method=disabled
+```
+
+`may-fail=false` makes `NetworkManager-wait-online` block until eth0 actually has the address, so boot is deliberately slower — that is the profile working, not hanging.
+
+If the host is already unreachable, the keyfile can be written offline: pull the SD card, mount `rootfs` (PARTUUID `...-02`) on another Linux host, and install the file there.
+
+**Broken assumption.**
+I assumed a host that *serves* DHCP obviously had a static address of its own, and never verified it.
+`nmcli con show` would have exposed an active connection with no file behind it at any point in those five months.
+Long uptime hides configuration drift rather than proving stability: runtime-only state is invisible until a reboot deletes it.
+Anything load-bearing should be verified to survive a reboot, not merely observed to be working.
+
+The cheap standing check, on any host with `netplan.io` installed alongside NetworkManager:
+
+```bash
+ls /etc/NetworkManager/system-connections/ /etc/netplan/
+```
+
+A connection that is active but present in neither directory is running on borrowed time, and will vanish at the next reboot.
+
+---
+
+## Raspberry Pi OS ships journald as volatile, so a power cut leaves no logs
+
+**Symptom.**
+After an unclean shutdown there is no log history at all.
+`journalctl --list-boots` shows only the current boot, `/var/log/journal/` exists but is empty, and there is no `/var/log/syslog`, `daemon.log` or `messages` because rsyslog is not installed.
+Post-mortems have to be reconstructed from `/var/log/cloud-init.log` and file mtimes.
+
+**Cause.**
+Raspberry Pi OS ships `/usr/lib/systemd/journald.conf.d/40-rpi-volatile-storage.conf` containing `Storage=volatile`, to spare the SD card.
+Logs live in `/run` and die with the power.
+The trap is that `/var/log/journal/` still exists with correct `root:systemd-journal` ownership, so the directory's presence looks like persistence is already enabled.
+Grepping `/etc/systemd/journald.conf` and `/etc/systemd/journald.conf.d/` finds nothing — the setting is a vendor drop-in under `/usr/lib`.
+
+Always check the merged config, not the files in `/etc`:
+
+```bash
+systemd-analyze cat-config systemd/journald.conf | grep '^Storage='
+```
+
+**Fix.**
+An `/etc` drop-in with a prefix that sorts after `40-`:
+
+```ini
+# /etc/systemd/journald.conf.d/50-persistent-storage.conf
+[Journal]
+Storage=persistent
+Compress=yes
+SystemMaxUse=200M
+SystemMaxFileSize=20M
+SystemMaxFiles=10
+MaxRetentionSec=1month
+SyncIntervalSec=5m
+```
+
+```bash
+sudo systemd-tmpfiles --create --prefix /var/log/journal
+sudo systemctl restart systemd-journald
+sudo journalctl --flush
+```
+
+Applied to both `netrunner` and `edgerunner` on 2026-09-08.
+
+**Broken assumption.**
+I assumed the presence of `/var/log/journal/` meant journald was persisting, and that `Storage=` unset meant the `auto` default was in play.
+Both were wrong: a vendor drop-in was overriding it, and under `auto` the directory only matters if nothing else sets `Storage` explicitly.
+The SD-wear reasoning behind the default is sound, but the caps above keep journald writes marginal next to what `pihole-FTL`'s SQLite WAL already does to the same card.

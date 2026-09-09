@@ -405,3 +405,47 @@ The next `ssh` connection will create a fresh master socket with the correct UID
 
 **Broken assumption.**
 I assumed each `ssh` command opened a fresh connection and got a fresh UID assignment. With `ControlMaster auto`, that's only true for the first connection after the socket is created or expires.
+
+---
+
+## `chage` cannot see IPA users, and the failed `sssd-*.socket` units are expected
+
+**Symptom.**
+Two things that look like a broken SSSD install on an enrolled host, and are not.
+
+`chage -l arpatek` fails with `user 'arpatek' does not exist in /etc/passwd`, even though SSH and PAM authentication against IPA work and the account is clearly usable.
+
+`systemctl --failed` permanently lists five units:
+
+```
+sssd-nss.socket    sssd-pac.socket    sssd-pam.socket
+sssd-ssh.socket    sssd-sudo.socket
+```
+
+**Cause.**
+Different causes, both benign.
+
+`chage` is shadow-utils. It reads `/etc/passwd` and `/etc/shadow` directly rather than going through NSS, so it structurally cannot see IPA accounts no matter how NSS is configured. Confirm NSS is healthy before chasing it:
+
+```bash
+getent passwd arpatek    # resolves
+id arpatek               # uid=104400004(arpatek) ...
+grep ^passwd: /etc/nsswitch.conf   # files winbind sss
+```
+
+The socket units fail because `sssd.conf` sets `services=` explicitly, which disables socket activation. `ExecStartPre=/usr/libexec/sssd/sssd_check_socket_activated_responders` then exits `17` by design and the responders run inside the main `sssd` process instead. `systemctl is-active sssd` is the meaningful check, not the sockets.
+
+**Fix.**
+Neither needs fixing. Manage password aging in IPA, where the policy actually lives:
+
+```bash
+ipa pwpolicy-show
+ipa user-show arpatek --all
+```
+
+Ignore the socket units in `systemctl --failed`.
+
+**Broken assumption.**
+I assumed a local account tool failing on an IPA user meant NSS was misconfigured — specifically that `/etc/nsswitch.conf` was missing `sss`. It was not; `sss` was present on the `passwd`, `group` and `shadow` lines the whole time. When a *local* account tool fails on a *directory* user, check whether the tool is NSS-aware before touching SSSD config.
+
+> Observed on `netrunner`, 2026-09-08. The socket units had been in their failed state since `2026-04-13 12:38:17` — the same timestamp as the NetworkManager profile deletion documented in [pihole/docs/gotchas.md](../../pihole/docs/gotchas.md). Whatever ran against that host that day is worth identifying, since it is likely still in a playbook.

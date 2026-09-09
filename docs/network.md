@@ -17,8 +17,8 @@
 | `erebus` | `10.33.111.103` | static, set via cloud-init |
 | `sandevistan` | `10.33.111.104` | static, set via cloud-init |
 | `kerenzikov` | `10.33.111.105` | static, set via cloud-init |
-| `netrunner` | `10.33.111.141` | static |
-| `edgerunner` | `10.33.111.142` | static, Pi-hole replica + NAS |
+| `netrunner` | `10.33.111.141` | static, NetworkManager keyfile `eth0-static.nmconnection` |
+| `edgerunner` | `10.33.111.142` | static, NetworkManager keyfile `Wired connection 1.nmconnection`; Pi-hole replica + NAS |
 | `errata` | `10.33.111.200` | DHCP reservation, reprovisioned as needed |
 
 ## DNS
