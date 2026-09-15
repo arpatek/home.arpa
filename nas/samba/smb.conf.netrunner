@@ -28,7 +28,7 @@
 
    # Logging
    logging      = file
-   log file     = /var/log/samba/log.%m
+   log file     = /var/log/samba/log.%I
    max log size = 1000
 
 # ──[ tank — RAID1 mirror (redundant) ]─────────────────────────────────────────
@@ -43,5 +43,13 @@
    directory mask      = 2770
    force directory mode = 2770
    inherit permissions = yes
+   vfs objects         = catia fruit streams_xattr
+   fruit:metadata      = stream
+   fruit:model         = MacSamba
+   fruit:posix_rename  = yes
+   fruit:veto_appledouble = no
+   fruit:nfs_aces      = no
+   fruit:wipe_intentionally_left_blank_rfork = yes
+   fruit:delete_empty_adfiles = yes
    delete veto files   = yes
    veto files          = /lost+found/._*/.DS_Store/

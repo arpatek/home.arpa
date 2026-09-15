@@ -130,3 +130,58 @@ macOS SMB and the case-insensitive client filesystem can't perform a case-only r
 
 **Fix.**
 SSH into the serving Pi and rename locally. The disk label was changed the same way (`e2label /dev/sda1 nas`) rather than through any client. (Same gotcha noted for the `home.arpa` rename in [../../docs/hostnames.md](../../docs/hostnames.md).)
+
+---
+
+## iOS reports every share read-only without `vfs_fruit` (2026-09-14)
+
+**Symptom.**
+An iPad mounts a share in the Files app, lists its contents fine, but shows "Read Only" at the bottom of the folder view and greys out New Folder. The same account (`sysadmin`) on the same share from macOS reads and writes normally. Affects every share on both Pis simultaneously.
+
+**Cause.**
+Apple clients send an `AAPL` create context on the first SMB2 CREATE against the share root, asking the server to advertise its Apple capabilities. Samba only answers that context when `vfs_fruit` is loaded. With no `vfs objects` line the blob is silently ignored, and the iOS Files app treats an unanswered AAPL negotiation as a read-only volume. macOS sends the same context and degrades gracefully when it goes unanswered, so a Mac keeps full read/write and masks the problem.
+
+The client never attempts a write — it decides at negotiation time. Nothing is denied, so nothing appears in the Samba logs as a failure.
+
+**Fix.**
+Load `fruit` on every share serving Apple clients:
+
+```
+   vfs objects         = catia fruit streams_xattr
+   fruit:metadata      = stream
+   fruit:model         = MacSamba
+   fruit:posix_rename  = yes
+   fruit:veto_appledouble = no
+   fruit:nfs_aces      = no
+   fruit:wipe_intentionally_left_blank_rfork = yes
+   fruit:delete_empty_adfiles = yes
+```
+
+Module order matters — `fruit` must sit between `catia` and `streams_xattr`. Apply with `smbcontrol smbd reload-config`, not a restart; existing client mounts survive a reload.
+
+`fruit:metadata = stream` stores Apple metadata in xattrs. It was safe here only because neither share held any AppleDouble (`._*`) files — nothing was ever served by netatalk. **Check before setting it on a share with migrated data**, since `stream` will not read existing `._*` sidecars and their metadata will appear lost:
+
+```bash
+find /srv/shares/nas -name '._*' -type f | wc -l
+```
+
+If that returns non-zero, use `fruit:metadata = netatalk` instead.
+
+**Diagnosis.**
+Two things in `smbstatus` output mislead on this:
+
+- The `R/W` column in the **Locked files** table is the access mode of one open file handle, not the share's permissions. A writable share shows `RDONLY` whenever a client happens to be reading a file.
+- The `Machine` column is the only reliable way to tell which client a session belongs to. Check it against the device's own IP before drawing conclusions — the Mac and the iPad both authenticate as `sysadmin` and are otherwise indistinguishable in the session list.
+
+To capture what a client is actually doing, `log file = /var/log/samba/log.%m` is useless: `%m` is the NetBIOS name, which SMB3 clients (macOS, iOS, Windows 10+) don't send, so they all collapse into a single `log.` file. Use `%I` (client IP) for real per-client logs, and set the level in `smb.conf` rather than via `smbcontrol` so every forked child inherits it:
+
+```
+   log file     = /var/log/samba/log.%I
+   log level    = 3 smb2:10 auth_audit:3
+   max log size = 0
+```
+
+Revert `log level` and `max log size` afterwards — `smb2:10` writes ~180KB for a single share browse.
+
+**Broken assumption.**
+"The client says read-only, so the server is denying something." The server denied nothing — it was never asked. A client-side capability decision looks identical to a permissions problem from the client, and produces no server-side evidence at all. When one client works and another doesn't under identical credentials, the difference is in what the clients negotiate, not in what the server permits.
