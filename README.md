@@ -1,5 +1,7 @@
 # home.arpa
 
+[![built by arpatek](.assets/badge.svg)](https://arpatek.dev)
+
 Homelab infrastructure-as-code documentation.
 A single Proxmox VE host (`blackwall`) runs all lab services as virtual machines.
 
